@@ -1348,7 +1348,8 @@ class Pilot_Ports(QtGui.QWidget):
         self.layout.addWidget(QtGui.QLabel('Ports:'))
         for port in ['L', 'C', 'R']:
             port_button = QtGui.QPushButton(port)
-            port_button.clicked.connect(lambda: self.calibrate_port(port))
+            port_button.setObjectName(port)
+            port_button.clicked.connect(self.calibrate_port)
             self.layout.addWidget(port_button)
 
         # n opens
@@ -1401,16 +1402,16 @@ class Pilot_Ports(QtGui.QWidget):
         #self.subscriber.on_recv(self.update_pbar)
 
 
-    def calibrate_port(self, port):
-        self.port_clicked = port
+    def calibrate_port(self):
+        self.port_clicked = self.sender().objectName()
 
-        self.this_n_opens = self.n_opens.text()
-        self.this_open_dur = self.open_dur.text()
+        self.this_n_opens = int(self.n_opens.text())
+        self.this_open_dur = int(self.open_dur.text())
 
         self.progress.setMaximum(int(self.this_n_opens))
         self.progress.setValue(0)
 
-        msg = {'port':port,
+        msg = {'port':self.port_clicked,
                'n_opens':self.this_n_opens,
                'open_dur':self.this_open_dur}
         self.send_message('CALIBRATE_PORT', self.pilot, msg)
