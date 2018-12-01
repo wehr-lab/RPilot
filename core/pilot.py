@@ -277,6 +277,7 @@ class RPilot:
             port.open()
             msg['open_num'] = i+1
             self.send_message('CAL_OPEN', 'C_{}'.format(self.name), msg)
+            time.sleep(0.15)
 
     def l_cal_result(self, value):
         port = value['port']

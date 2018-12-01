@@ -112,7 +112,8 @@ class Terminal_Networking(multiprocessing.Process):
             'STOPALL': self.m_stopall,
             'RECVD': self.m_recvd, # We are getting confirmation that the message was received
             'LISTENING': self.m_listening, # Terminal wants to know if we're alive yet
-            'KILL':  self.m_kill # Terminal wants us to die :(
+            'KILL':  self.m_kill,  # Terminal wants us to die :(
+            'CALIBRATE_PORT': self.m_calibrate
         }
 
         # Listen dictionary - What to do with pushes from the raspberry pis
@@ -151,7 +152,7 @@ class Terminal_Networking(multiprocessing.Process):
             self.logger.info("Starting IOLoop")
             self.loop.start()
 
-    def publish(self, target, message, suppress_print=False):
+    def publish(self, target, message, suppress_print=False, confirm=True):
         # target is the subscriber filter
         # Message is a dict that should have two k/v pairs:
         # 'key': the type of message this is
@@ -184,9 +185,10 @@ class Terminal_Networking(multiprocessing.Process):
         # Publish the message
         self.publisher.send_multipart([bytes(target), json.dumps(message)])
 
-        # Spawn a thread to check in on our message
-        self.timers[msg_num] = threading.Timer(5.0, self.p_repeat, args=(msg_num,))
-        self.timers[msg_num].start()
+        if confirm is True:
+            # Spawn a thread to check in on our message
+            self.timers[msg_num] = threading.Timer(5.0, self.p_repeat, args=(msg_num,))
+            self.timers[msg_num].start()
 
 
 
@@ -325,6 +327,9 @@ class Terminal_Networking(multiprocessing.Process):
         # Stopping the loop should kill the process, as it's what's holding us in run()
         self.loop.stop()
 
+    def m_calibrate(self, target, value):
+        self.publish(target, {'key':'CALIBRATE_PORT','value':value})
+
 
     def l_data(self, target, value):
         # Send through to terminal
@@ -368,7 +373,7 @@ class Terminal_Networking(multiprocessing.Process):
 
     def l_cal_open(self, target, value):
         # publishes to the listener C_{pilot_name}
-        self.publish(target, {'key': 'CAL_OPEN', 'value': value})
+        self.publish(target, {'key': 'CAL_OPEN', 'value': value}, confirm=False)
 
     def p_repeat(self, message_id):
         # Handle repeated messages

@@ -26,7 +26,7 @@ from networking import Terminal_Networking
 import tasks
 import sounds
 from utils import InvokeEvent, Invoker
-from gui import Control_Panel, Protocol_Wizard, Popup, Weights, Reassign
+from gui import Control_Panel, Protocol_Wizard, Popup, Weights, Reassign, Calibrate_Water
 
 # TODO: Oh holy hell just rewrite all the inter-widget communication as zmq
 # TODO: Be more complete about generating logs
@@ -148,9 +148,11 @@ class Terminal(QtGui.QMainWindow):
         mouse_weights_act = QtGui.QAction("View Mouse &Weights", self, triggered=self.mouse_weights)
         update_protocol_act = QtGui.QAction("Update Protocols", self, triggered=self.update_protocols)
         reassign_act = QtGui.QAction("Batch Reassign Protocols", self, triggered=self.reassign_protocols)
+        calibrate_act = QtGui.QAction("Calibrate Water Rewards", self, triggered=self.calibrate_ports)
         self.tool_menu.addAction(mouse_weights_act)
         self.tool_menu.addAction(update_protocol_act)
         self.tool_menu.addAction(reassign_act)
+        self.tool_menu.addAction(calibrate_act)
 
         # Set size of window to be fullscreen without maximization
         # Until a better solution is found, if not set large enough, the pilot tabs will
@@ -488,6 +490,10 @@ class Terminal(QtGui.QMainWindow):
             #     protocol = protocols[which_prot]
             #     self.mice[mouse].assign_protocol(os.path.join(self.prefs['PROTOCOLDIR'], protocol), step_n=self.mice[mouse].step)
 
+    def calibrate_ports(self):
+
+        calibrate_window = Calibrate_Water(self.prefs, sorted(self.pilots.keys()), self.send_message)
+        calibrate_window.exec_()
 
 
 
