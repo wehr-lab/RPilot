@@ -39,7 +39,7 @@ import hardware
 
 class RPilot:
 
-    def __init__(self, prefs=None):
+    def __init__(self, prefs=None, prefs_file=None):
         # If we weren't handed prefs, try to load them from the default location
         if not prefs:
             prefs_file = '/usr/rpilot/prefs.json'
@@ -49,6 +49,13 @@ class RPilot:
             with open(prefs_file) as prefs_file_open:
                 prefs = json.load(prefs_file_open)
                 raise Warning('No prefs file passed, loaded from default location. Should pass explicitly')
+
+        # store the prefs file location so we can update it later
+        if not prefs_file:
+            prefs_file = '/usr/rpilot/prefs.json'
+
+        self.prefs_file = prefs_file
+
 
         self.prefs = prefs
         self.name = self.prefs['NAME']
@@ -88,6 +95,8 @@ class RPilot:
             'STOP' : self.l_stop, # We are being asked to stop running our task
             'PARAM': self.l_param, # A parameter is being changes
             'LVLUP': self.l_levelup, # The mouse has leveled up! (combines stop/start)
+            'CALIBRATE_PORT': self.l_cal_port, # calibrate a port's water output
+            'CALIBRATE_RESULT': self.l_cal_result # results of calibration in uL/ms
         }
         self.context = None
         self.loop    = None
@@ -250,6 +259,39 @@ class RPilot:
 
     def l_levelup(self, value):
         pass
+
+    def l_cal_port(self, value):
+        port = value['port']
+        n_opens = value['n_opens']
+        open_dur = value['open_dur']
+
+        threading.Thread(target=self.calibrate_port,args=(port, n_opens, open_dur)).start()
+
+
+    def calibrate_port(self, port_name, n_opens, open_dur):
+        pin_num = self.prefs['PINS']['PORTS'][port_name]
+        port = hardware.Solenoid(pin_num, duration=int(open_dur))
+        msg = {'open_num':0}
+
+        for i in range(int(n_opens)):
+            port.open()
+            msg['open_num'] = i+1
+            self.send_message('CAL_OPEN', 'C_{}'.format(self.name), msg)
+
+    def l_cal_result(self, value):
+        port = value['port']
+        flowrate = value['flowrate']
+
+        if 'CALIBRATION' not in self.prefs.keys():
+            self.prefs['CALIBRATION'] = {}
+
+        if 'PORTS' not in self.prefs['CALIBRATION'].keys():
+            self.prefs['CALIBRATION']['PORTS'] = {}
+
+        self.prefs['CALIBRATION']['PORTS'][port] = flowrate
+
+        with open(self.prefs_file, 'w') as pf:
+            json.dump(self.prefs, pf)
 
 
     def update_state(self):
@@ -434,7 +476,7 @@ if __name__ == '__main__':
     with open(prefs_file) as prefs_file_open:
         prefs = json.load(prefs_file_open)
 
-    a = RPilot(prefs)
+    a = RPilot(prefs, prefs_file)
 
 
 

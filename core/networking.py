@@ -123,6 +123,7 @@ class Terminal_Networking(multiprocessing.Process):
             'STATE': self.l_state, # The Pi is confirming/notifying us that it has changed state
             'RECVD': self.m_recvd,  # We are getting confirmation that the message was received
             'FILE': self.l_file,    # The pi needs some file from us
+            'CAL_OPEN': self.l_cal_open # updating number of opens
         }
 
         # self.mice_data = {} # maps the running mice to methods to stash their data
@@ -365,6 +366,10 @@ class Terminal_Networking(multiprocessing.Process):
 
         print('file sending inited')
 
+    def l_cal_open(self, target, value):
+        # publishes to the listener C_{pilot_name}
+        self.publish(target, {'key': 'CAL_OPEN', 'value': value})
+
     def p_repeat(self, message_id):
         # Handle repeated messages
         # If we still have the message in our outbox...
@@ -494,7 +499,8 @@ class Pilot_Networking(multiprocessing.Process):
             'STATE': self.m_state, # Confirm or notify terminal of state change
             'DATA': self.m_data,  # Sending data back
             'COHERE': self.m_cohere, # Sending our temporary data table at the end of a run to compare w/ terminal's copy
-            'ALIVE': self.m_alive # send some initial information to the terminal
+            'ALIVE': self.m_alive, # send some initial information to the terminal
+            'CAL_OPEN': self.m_cal_open # updating the number of opens we've done
         }
 
         # Listen dictionary - What method to call for PUBlishes from the Terminal
@@ -504,6 +510,8 @@ class Pilot_Networking(multiprocessing.Process):
             'STOP': self.l_stop, # We are being told to stop the current task
             'PARAM': self.l_change, # The Terminal is changing some task parameter
             'FILE':  self.l_file, # We are receiving a file
+            'CALIBRATE_PORT': self.l_cal_port, # calibrating our water ports
+            'CALIBRATE_RESULT': self.l_cal_result # results of our calibration in uL/ms
         }
 
         self.logger.info('Starting IOLoop')
@@ -608,6 +616,10 @@ class Pilot_Networking(multiprocessing.Process):
         # just say hello
         self.push('ALIVE', target=target, value=value)
 
+    def m_cal_open(self, target, value):
+        # just send along
+        self.push('CAL_OPEN', target, value)
+
     def l_ping(self, value):
         # The terminal wants to know if we are alive, respond with our name and IP
         self.push('ALIVE', value={'pilot':self.name, 'ip':self.ip})
@@ -655,6 +667,17 @@ class Pilot_Networking(multiprocessing.Process):
 
         # If we requested a file, some poor start fn is probably waiting on us
         self.file_block.set()
+
+    def l_cal_port(self, value):
+        # calibrate ports, just send out to pi
+        # TODO: State check - are we running a task?
+
+        self.send_message_out(key='CALIBRATE_PORT', value=value)
+
+    def l_cal_result(self, value):
+        self.send_message_out(key='CALIBRATE_RESULT', value=value)
+
+
 
 
 

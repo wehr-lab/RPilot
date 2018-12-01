@@ -98,7 +98,7 @@ class Terminal(QtGui.QMainWindow):
             'PING' : self.l_ping,  # Someone wants to know if we're alive
             'FILE' : self.l_file,  # A pi needs some files to run its protocol
             'DATA' : self.l_data,   # data 4 us!
-            'ALIVE': self.l_alive  # pi is responding to our ping, or telling us its info
+            'ALIVE': self.l_alive,  # pi is responding to our ping, or telling us its info
         }
 
         # Make invoker object to send GUI events back to the main thread

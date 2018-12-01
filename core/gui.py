@@ -11,6 +11,9 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from mouse import Mouse
 import tasks
 import sounds
+import zmq
+from zmq.eventloop.ioloop import IOLoop
+from zmq.eventloop.zmqstream import ZMQStream
 
 class Control_Panel(QtGui.QWidget):
     # Hosts two nested tab widgets to select pilot and mouse,
@@ -1291,22 +1294,131 @@ class Sound_Widget(QtGui.QWidget):
 ######################################
 
 class Calibrate_Water(QtGui.QDialog):
-    def __init__(self, pilots, message_fn):
+    def __init__(self, prefs, pilots, message_fn):
+        # make a LUT of valve opening time to water volume
         super(Calibrate_Water, self).__init__()
 
+        self.prefs = prefs
         self.pilots = pilots
         self.send_message = message_fn
 
     class Pilot_Ports(QtGui.QWidget):
-        def __init__(self, pilot, message_fn, n_clicks=1000, click_dur=30):
+        def __init__(self, pilot, message_fn, subport, n_clicks=1000, click_dur=30):
             super(Pilot_Ports, self).__init__()
 
             self.pilot = pilot
             self.send_message = message_fn
+            self.subport = subport
+
+            # Which port did we click?
+            self.port_clicked = None
+
+            self.init_ui()
 
         def init_ui(self):
-            #
-            pass
+            # TODO: For now, for ... expediency ... assume we have only L/C/R ports. we should really ask the pilot what ports it has
+            # Left side - buttons to trigger a calibration on each of the ports,
+            #           - edit boxes to set # of opens & timing
+            # Right side - progress bar and spot to enter measured volume
+
+            self.layout = QtGui.QHBoxLayout()
+
+            self.layout.addWidget(QtGui.QLabel('Ports:'))
+            for port in ['L', 'C', 'R']:
+                port_button = QtGui.QPushButton(port)
+                port_button.clicked.connect(lambda: self.calibrate_port(port))
+                self.layout.addWidget(port_button)
+
+            # n opens
+            self.layout.addWidget(QtGui.QLineEdit('n opens:'))
+            self.n_opens = QtGui.QLineEdit(1000)
+            self.n_opens.setValidator(QtGui.QIntValidator())
+            self.layout.addWidget(self.n_opens)
+
+            # open duration
+            self.layout.addWidget(QtGui.QLineEdit('open dur (ms):'))
+            self.open_dur = QtGui.QLineEdit(50)
+            self.open_dur.setValidator(QtGui.QIntValidator())
+            self.layout.addWidget(self.open_dur)
+
+            # Divider
+            self.layout.addWidget(QtGui.QFrame().setFrameShape(QtGui.QFrame.VLine))
+
+            # Progress Bar
+            self.progress = QtGui.QProgressBar()
+            self.layout.addWidget(self.progress)
+
+            # Input final volume
+            self.layout.addWidget(QtGui.QLabel('Final Volume (mL):'))
+            self.final_volume = QtGui.QLineEdit()
+            self.final_volume.setValidator(QtGui.QDoubleValidator())
+            self.volume_ok = QtGui.QPushButton('OK')
+            self.volume_ok.clicked.connect(self.send_volume)
+            self.layout.addWidget(self.final_volume)
+            self.layout.addWidget(self.volume_ok)
+
+            # flowrate
+            self.flowrate = QtGui.QLabel('?uL/ms')
+            self.layout.addWidget(self.flowrate)
+
+            self.setLayout(self.layout)
+
+        def init_listener(self):
+            self.context = zmq.Context.instance()
+            #self.loop = IOLoop.instance()
+
+            self.subscriber = self.context.socket(zmq.SUB)
+            self.subscriber.connect('tcp://localhost:{}'.format(self.subport))
+            sub_string = 'C_{}'.format(self.pilot)
+            self.subscriber.setsockopt(zmq.SUBSCRIBE, bytes(sub_string))
+            #self.subscriber = ZMQStream(self.subscriber, self.loop)
+            #self.subscriber.on_recv(self.update_pbar)
+
+
+        def calibrate_port(self, port):
+            self.port_clicked = port
+
+            self.this_n_opens = self.n_opens.text()
+            self.this_open_dur = self.open_dur.text()
+
+            self.progress.setMaximum(int(self.this_n_opens))
+            self.progress.setValue(0)
+
+            msg = {'key':'CALIBRATE_PORT',
+                   'value':{'port':port,
+                            'n_opens':self.this_n_opens,
+                            'open_dur':self.this_open_dur}}
+            self.send_message(self.pilot, msg)
+
+            opens_done = 0
+            while opens_done < self.this_n_opens:
+                msg = self.subscriber.recv_json()
+                opens_done = int(msg[1]['open_num'])
+                self.progress.setValue(opens_done)
+
+        def send_volume(self):
+            final_volume = float(self.final_volume.text())
+            n_opens = float(self.this_n_opens)
+            open_dur = float(self.this_open_dur)
+
+            # multiply by 1000 to get uL
+            flowrate = ((final_volume*1000.0)/n_opens)/open_dur
+
+
+
+            msg = {'key':'CALIBRATE_RESULT',
+                   'value':{'port':self.port_clicked,
+                            'flowrate':flowrate}}
+
+            self.send_message(self.pilot, msg)
+            self.flowrate.setText("{} uL/ms".format(flowrate))
+
+        def update_pbar(self, msg):
+            message = json.loads(msg[1])
+            self.progress.setValue(int(message['value']['open_num']))
+
+
+
 
 class Reassign(QtGui.QDialog):
 
