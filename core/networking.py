@@ -113,7 +113,8 @@ class Terminal_Networking(multiprocessing.Process):
             'RECVD': self.m_recvd, # We are getting confirmation that the message was received
             'LISTENING': self.m_listening, # Terminal wants to know if we're alive yet
             'KILL':  self.m_kill,  # Terminal wants us to die :(
-            'CALIBRATE_PORT': self.m_calibrate
+            'CALIBRATE_PORT': self.m_calibrate,
+            'CALIBRATE_RESULT': self.m_cal_result
         }
 
         # Listen dictionary - What to do with pushes from the raspberry pis
@@ -330,6 +331,8 @@ class Terminal_Networking(multiprocessing.Process):
     def m_calibrate(self, target, value):
         self.publish(target, {'key':'CALIBRATE_PORT','value':value})
 
+    def m_cal_result(self, target, value):
+        self.publish(target, {'key': 'CALIBRATE_RESULT', 'value': value})
 
     def l_data(self, target, value):
         # Send through to terminal
