@@ -204,8 +204,7 @@ class JackClient(mp.Process):
 
 
         if not play_evt:
-            for channel, port in zip(self.zero_arr, self.client.outports):
-                port.get_array()[:] = channel
+            port_arr = self.zero_arr
         else:
 
             try:
@@ -219,10 +218,8 @@ class JackClient(mp.Process):
                 #    port_arr = port.get_array()[:]
                 #    port_arr = channel
                 # sound is over
-                if play_evt:
-                    self.play_evt.clear()
-                if stop_evt:
-                    self.stop_evt.set()
+                self.play_evt.clear()
+                self.stop_evt.set()
             else:
                 #TODO: Fix the multi-output situation so it doesn't get all grumbly.
                 # use cycle so if sound is single channel it gets copied to all outports
