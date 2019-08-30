@@ -96,7 +96,7 @@ class JackClient(mp.Process):
         self.client = jack.Client(self.name)
         self.blocksize = self.client.blocksize
         self.fs = self.client.samplerate
-        np.ndarray self.zero_arr = np.zeros((self.blocksize,1),dtype='float32')
+        cdef np.ndarray self.zero_arr = np.zeros((self.blocksize,1),dtype='float32').T
 
         # store a reference to us and our values in the module
         globals()['SERVER'] = self
@@ -121,7 +121,7 @@ class JackClient(mp.Process):
         self.client = jack.Client(self.name)
         self.blocksize = self.client.blocksize
         self.fs = self.client.samplerate
-        self.zero_arr = np.zeros((self.blocksize,1),dtype='float32')
+        cdef np.ndarray self.zero_arr = np.zeros((self.blocksize,1),dtype='float32').T
 
         self.client.set_process_callback(self.process)
 
@@ -175,7 +175,7 @@ class JackClient(mp.Process):
         """
         self.quit_evt.set()
 
-    def process(self, frames):
+    def process(self, np.ndarray frames):
         """
         Process a frame of audio.
 
@@ -191,29 +191,40 @@ class JackClient(mp.Process):
         Args:
             frames: Unused - frames of input audio, but there shouldn't be any.
         """
-        if not self.play_evt.is_set():
-            for channel, port in zip(self.zero_arr.T, self.client.outports):
-                port.get_array()[:] = channel
-        else:
+        cdef np.ndarray data
+        cdef np.ndarray self.zero_arr
+        cdef np.ndarray port_arr
+        cdef np.ndarray channel
 
-            try:
-                data = self.q.get_nowait()
-            except queue.Empty:
-                data = None
-                Warning('Queue Empty')
-            if data is None:
-                # fill with silence
-                for channel, port in zip(self.zero_arr.T, self.client.outports):
-                    port.get_array()[:] = channel
-                # sound is over
+
+        #if not self.play_evt.is_set():
+        #    for channel, port in zip(self.zero_arr, self.client.outports):
+        #        port.get_array()[:] = channel
+        #else:
+
+        try:
+            data = self.q.get_nowait()
+        except queue.Empty:
+            data = np.ndarray(())
+            #Warning('Queue Empty')
+        if len(data) == 0:
+            # fill with silence
+            for channel, port in zip(self.zero_arr, self.client.outports):
+                port_arr = port.get_array()[:]
+                port_arr = channel
+            # sound is over
+            if self.play_evt.is_set():
                 self.play_evt.clear()
+            if not self.play_evt.is_set():
                 self.stop_evt.set()
-            else:
-                #TODO: Fix the multi-output situation so it doesn't get all grumbly.
-                # use cycle so if sound is single channel it gets copied to all outports
-                self.client.outports[0].get_array()[:] = data.T
-                #for channel, port in zip(cycle(data.T), self.client.outports):
-                #    port.get_array()[:] = channel
+        else:
+            #TODO: Fix the multi-output situation so it doesn't get all grumbly.
+            # use cycle so if sound is single channel it gets copied to all outports
+
+            port_arr = self.client.outports[0].get_array()[:]
+            port_arr = data.T
+            #for channel, port in zip(cycle(data.T), self.client.outports):
+            #    port.get_array()[:] = channel
 
 
 

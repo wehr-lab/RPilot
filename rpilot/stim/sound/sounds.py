@@ -266,7 +266,7 @@ if server_type in ("jack", "docs"):
                 for frame in self.chunks:
                     self.q.put_nowait(frame)
                 # The jack server looks for a None object to clear the play flag
-                self.q.put_nowait(None)
+                self.q.put_nowait(np.ndarray(()))
                 self.buffered = True
 
         def play(self):
