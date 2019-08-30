@@ -96,7 +96,7 @@ class JackClient(mp.Process):
         self.client = jack.Client(self.name)
         self.blocksize = self.client.blocksize
         self.fs = self.client.samplerate
-        self.zero_arr = np.zeros((self.blocksize,1),dtype='float32')
+        np.ndarray self.zero_arr = np.zeros((self.blocksize,1),dtype='float32')
 
         # store a reference to us and our values in the module
         globals()['SERVER'] = self
