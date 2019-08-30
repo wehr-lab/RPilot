@@ -14,6 +14,8 @@ from copy import copy
 from threading import Thread
 from itertools import cycle
 
+from cpython cimport bool
+
 from rpilot import prefs
 
 # allows us to access the audio server and some sound attributes
