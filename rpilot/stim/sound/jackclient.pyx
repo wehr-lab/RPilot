@@ -55,7 +55,7 @@ Q_LOCK = None
 :class:`multiprocessing.Lock`: Lock that enforces a single writer to the `QUEUE` at a time.
 """
 
-class JackClient(mp.Process):
+cdef class JackClient(mp.Process):
     """
     Client that dumps frames of audio directly into a running jackd client.
 
@@ -74,6 +74,8 @@ class JackClient(mp.Process):
         fs (int): Sampling rate of client
         zero_arr (:class:`numpy.ndarray`): cached array of zeroes used to fill jackd pipe when not processing audio.
     """
+    cdef np.ndarray zero_arr
+
     def __init__(self, name='jack_client'):
         """
         Args:
@@ -96,7 +98,7 @@ class JackClient(mp.Process):
         self.client = jack.Client(self.name)
         self.blocksize = self.client.blocksize
         self.fs = self.client.samplerate
-        cdef np.ndarray self.zero_arr = np.zeros((self.blocksize,1),dtype='float32').T
+        self.zero_arr = np.zeros((self.blocksize,1),dtype='float32').T
 
         # store a reference to us and our values in the module
         globals()['SERVER'] = self
@@ -121,7 +123,7 @@ class JackClient(mp.Process):
         self.client = jack.Client(self.name)
         self.blocksize = self.client.blocksize
         self.fs = self.client.samplerate
-        cdef np.ndarray self.zero_arr = np.zeros((self.blocksize,1),dtype='float32').T
+        self.zero_arr = np.zeros((self.blocksize,1),dtype='float32').T
 
         self.client.set_process_callback(self.process)
 
@@ -192,7 +194,6 @@ class JackClient(mp.Process):
             frames: Unused - frames of input audio, but there shouldn't be any.
         """
         cdef np.ndarray data
-        cdef np.ndarray self.zero_arr
         cdef np.ndarray port_arr
         cdef np.ndarray channel
 
