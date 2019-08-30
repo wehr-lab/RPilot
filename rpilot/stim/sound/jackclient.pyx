@@ -74,7 +74,6 @@ class JackClient(mp.Process):
         fs (int): Sampling rate of client
         zero_arr (:class:`numpy.ndarray`): cached array of zeroes used to fill jackd pipe when not processing audio.
     """
-    cdef np.ndarray zero_arr
 
     def __init__(self, name='jack_client'):
         """
@@ -98,7 +97,8 @@ class JackClient(mp.Process):
         self.client = jack.Client(self.name)
         self.blocksize = self.client.blocksize
         self.fs = self.client.samplerate
-        self.zero_arr = np.zeros((self.blocksize,1),dtype='float32').T
+        cdef np.ndarray zero_arr = np.zeros((self.blocksize,1),dtype='float32').T
+        self.zero_arr = zero_arr
 
         # store a reference to us and our values in the module
         globals()['SERVER'] = self
@@ -123,8 +123,9 @@ class JackClient(mp.Process):
         self.client = jack.Client(self.name)
         self.blocksize = self.client.blocksize
         self.fs = self.client.samplerate
-        self.zero_arr = np.zeros((self.blocksize,1),dtype='float32').T
-
+        cdef np.ndarray zero_arr = np.zeros((self.blocksize,1),dtype='float32').T
+        self.zero_arr = zero_arr
+        
         self.client.set_process_callback(self.process)
 
         self.client.outports.register('out_0')
