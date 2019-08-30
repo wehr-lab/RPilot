@@ -55,7 +55,7 @@ Q_LOCK = None
 :class:`multiprocessing.Lock`: Lock that enforces a single writer to the `QUEUE` at a time.
 """
 
-cdef class JackClient(mp.Process):
+class JackClient(mp.Process):
     """
     Client that dumps frames of audio directly into a running jackd client.
 
