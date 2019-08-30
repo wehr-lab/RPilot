@@ -9,6 +9,7 @@ import multiprocessing as mp
 import Queue as queue
 import jack
 import numpy as np
+cimport numpy as np
 from copy import copy
 from threading import Thread
 from itertools import cycle
