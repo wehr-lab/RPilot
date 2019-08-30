@@ -125,7 +125,7 @@ class JackClient(mp.Process):
         self.fs = self.client.samplerate
         cdef np.ndarray zero_arr = np.zeros((self.blocksize,1),dtype='float32').T
         self.zero_arr = zero_arr
-        
+
         self.client.set_process_callback(self.process)
 
         self.client.outports.register('out_0')
@@ -195,38 +195,42 @@ class JackClient(mp.Process):
             frames: Unused - frames of input audio, but there shouldn't be any.
         """
         cdef np.ndarray data
-        cdef np.ndarray port_arr
+        cdef np.ndarray port_arr = self.client.outports[0].get_array()[:]
         cdef np.ndarray channel
+        cdef bool play_evt = self.play_evt.is_set()
+        cdef bool stop_evt = self.stop_evt.is_set()
 
 
-        #if not self.play_evt.is_set():
-        #    for channel, port in zip(self.zero_arr, self.client.outports):
-        #        port.get_array()[:] = channel
-        #else:
 
-        try:
-            data = self.q.get_nowait()
-        except queue.Empty:
-            data = np.ndarray(())
-            #Warning('Queue Empty')
-        if len(data) == 0:
-            # fill with silence
+
+        if not play_evt:
             for channel, port in zip(self.zero_arr, self.client.outports):
-                port_arr = port.get_array()[:]
-                port_arr = channel
-            # sound is over
-            if self.play_evt.is_set():
-                self.play_evt.clear()
-            if not self.play_evt.is_set():
-                self.stop_evt.set()
+                port.get_array()[:] = channel
         else:
-            #TODO: Fix the multi-output situation so it doesn't get all grumbly.
-            # use cycle so if sound is single channel it gets copied to all outports
 
-            port_arr = self.client.outports[0].get_array()[:]
-            port_arr = data.T
-            #for channel, port in zip(cycle(data.T), self.client.outports):
-            #    port.get_array()[:] = channel
+            try:
+                data = self.q.get_nowait()
+            except queue.Empty:
+                #Warning('Queue Empty')
+
+                # fill with silence
+                port_arr = self.zero_arr
+                #for channel, port in zip(self.zero_arr, self.client.outports):
+                #    port_arr = port.get_array()[:]
+                #    port_arr = channel
+                # sound is over
+                if play_evt:
+                    self.play_evt.clear()
+                if stop_evt:
+                    self.stop_evt.set()
+            else:
+                #TODO: Fix the multi-output situation so it doesn't get all grumbly.
+                # use cycle so if sound is single channel it gets copied to all outports
+
+                #port_arr = self.client.outports[0].get_array()[:]
+                port_arr = data.T
+                #for channel, port in zip(cycle(data.T), self.client.outports):
+                #    port.get_array()[:] = channel
 
 
 
