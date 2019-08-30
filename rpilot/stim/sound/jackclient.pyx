@@ -1,3 +1,5 @@
+# cython: profile=True
+
 """
 Client that dumps samples directly to the jack client with the :mod:`jack` package.
 """
