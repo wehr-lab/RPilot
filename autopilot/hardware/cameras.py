@@ -128,6 +128,7 @@ class Camera(Hardware):
         self._write_q = None
         self._stream_q = None
         self._indicator = None
+        self._sink = None
 
         self.frame = None
         self.shape = None
@@ -162,6 +163,9 @@ class Camera(Hardware):
 
         self.indicating = threading.Event()
         self.indicating.clear()
+
+        self.sinking = threading.Event()
+        self.sinking.clear()
 
         # initialize args passed by kwargs
         if 'stream' in kwargs.keys():
@@ -294,6 +298,9 @@ class Camera(Hardware):
         if self.queueing.is_set():
             self.q.put_nowait(self.frame)
 
+        if self.sinking.is_set():
+            self._sink(self.frame[1])
+
         if self.indicating.is_set():
             if not self._indicator:
                 self._indicator = tqdm()
@@ -352,6 +359,12 @@ class Camera(Hardware):
         )
 
         self.streaming.set()
+
+    def sink(self, pipeline):
+        # self._sink
+        self.sinking.set()
+        self._sink = pipeline
+
 
     def l_start(self, val):
         """
@@ -949,34 +962,49 @@ class Camera_Spinnaker(Camera):
         More details on the differences are given in the :meth:`_write_frame`,
         """
         frame_array = None
-        try:
-            self.frame = self._grab()
-        except Exception as e:
-            self.logger.exception(e)
+        if not (self.writing.is_set() or self.streaming.is_set() or self.queueing.is_set()):
+            try:
+                ts, img = self._grab()
 
+                self.frame = (ts, img.GetNDArray())
+                img.Release()
+
+            except Exception as e:
+                self.logger.exception(e)
+
+
+
+
+        else:
         #self._frame[:] = self.frame[1].GetNDArray()
-
-        if self.writing.is_set():
-            self._write_frame()
-
-        if self.streaming.is_set():
-            if not frame_array:
-                frame_array = self.frame[1].GetNDArray()
-            self._stream_q.put_nowait({'timestamp': self.frame[0],
-                                       self.name  : frame_array})
-
-        if self.queueing.is_set():
-            if not frame_array:
-                frame_array = self.frame[1].GetNDArray()
-            self.q.put_nowait((self.frame[0], frame_array))
-
-        if self.indicating.is_set():
-            if self._indicator is None:
-                self._indicator = tqdm()
-            self._indicator.update()
+            try:
+                self.frame = self._grab()
+            except Exception as e:
+                self.logger.exception(e)
 
 
-        self.frame[1].Release()
+            if self.writing.is_set():
+                self._write_frame()
+
+            if self.streaming.is_set():
+                if not frame_array:
+                    frame_array = self.frame[1].GetNDArray()
+                self._stream_q.put_nowait({'timestamp': self.frame[0],
+                                           self.name  : frame_array})
+
+            if self.queueing.is_set():
+                if not frame_array:
+                    frame_array = self.frame[1].GetNDArray()
+                self.q.put_nowait((self.frame[0], frame_array))
+
+            if self.indicating.is_set():
+                if self._indicator is None:
+                    self._indicator = tqdm()
+                self._indicator.update()
+
+            # for now, if none of the flags are set, make available as NDarray
+
+            self.frame[1].Release()
 
     def _grab(self):
         """
