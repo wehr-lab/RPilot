@@ -197,7 +197,7 @@ class Camera(Hardware):
         self.frame_n = 0
 
         self._capture_thread = threading.Thread(target=self._capture)
-        self._capture_thread.setDaemon(True)
+        # self._capture_thread.setDaemon(True)
         self._capture_thread.start()
 
     def _capture(self):
