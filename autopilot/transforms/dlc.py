@@ -70,7 +70,7 @@ class DLC(object):
         from tensorflow.python.tools import freeze_graph
 
 
-        sess, _, _ = setup_GPUpose_prediction(self.cfg)
+        sess, _, _ = self.setup_GPUpose_prediction()
         pbtxt_file = self.cfg.init_weights + '_frozen.pbtxt' if self.cfg.batch_size == 1 else self.cfg.init_weights + '_frozen_batch.pbtxt'
         pb_file = self.cfg.init_weights + '_frozen.pb' if self.cfg.batch_size == 1 else self.cfg.init_weights + '_frozen_batch.pb'
         TF.train.write_graph(sess.graph.as_graph_def(), '', pbtxt_file, as_text=True)
