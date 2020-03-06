@@ -11,7 +11,7 @@ class Digital_Out_Jetson(object):
     def __init__(self, pin, initial=0):
         self.pin = pin
 
-        GPIO.setup(pin, GPIO.OUT, self.states[initial])
+        GPIO.setup(pin, GPIO.OUT, initial=self.states[initial])
 
 
     def set(self, state):
