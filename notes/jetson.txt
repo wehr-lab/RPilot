@@ -1,0 +1,15 @@
+#############
+# Jetson Nano
+#############
+
+https://developer.nvidia.com/embedded/learn/get-started-jetson-nano-devkit
+
+gpio library
+https://github.com/NVIDIA/jetson-gpio
+
+pwm 
+https://github.com/NVIDIA/jetson-gpio/blob/master/samples/simple_pwm.py
+
+tensorflow
+https://docs.nvidia.com/deeplearning/frameworks/install-tf-jetson-platform/index.html
+
