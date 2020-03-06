@@ -12,16 +12,22 @@ if int(vers[0]) == 1 and int(vers[1]) > 12:
 else:
     TF = tf
 
-import deeplabcut
 from deeplabcut.pose_estimation_tensorflow.config import load_config
 from deeplabcut.pose_estimation_tensorflow.nnet.net_factory import pose_net
 
 class DLC(object):
     def __init__(self, cfg_path):
 
-        self.cfg_path
+        self.cfg_path = cfg_path
         self.cfg = edict(load_config(cfg_path))
 
+        self.sess, self.inputs, self.outputs = self.setup_frozen_prediction()
+
+    def process(self, frame):
+
+        return self.sess.run(self.outputs, feed_dict={
+            self.inputs: frame
+        })
 
 
 
