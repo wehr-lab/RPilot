@@ -1,5 +1,7 @@
 import os
 
+# TODO: Use this to download weights -  http://deeplabcut.rowland.harvard.edu/models/
+
 os.environ['DLClight'] = 'True'  # so wxpython is not required.
 
 import numpy as np

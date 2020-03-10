@@ -10,6 +10,131 @@ or locations of objects to area labels
 
 import cv2
 import numpy as np
+import threading
+import multiprocessing
+from queue import Queue
+
+from autopilot.core.networking import Net_Node
+
+
+class Transform(object):
+
+    def __init__(self, processor, sink=None, **kwargs):
+        self.processor = processor
+
+        if sink is None:
+            self.init_networking(**kwargs)
+        else:
+            self.sink = sink
+
+
+    def init_networking(self, listens=None, **kwargs):
+        """
+        Spawn a :class:`.Net_Node` to :attr:`Hardware.node` for streaming or networked command
+
+        Args:
+            listens (dict): Dictionary mapping message keys to handling methods
+            **kwargs: Passed to :class:`.Net_Node`
+
+        Returns:
+
+        """
+
+
+        self.node = Net_Node(
+            **kwargs
+        )
+
+        self.sink = self.node.get_stream(
+            'stream', 'CONTINUOUS', upstream=to,
+            ip=ip, port=port, subject=subject
+        )
+
+
+    def process(self, input):
+        output = self.processor(input)
+
+        if self.sink:
+            if isinstance(Queue):
+                self.sink.put_nowait(output)
+            else:
+                self.sink(output)
+        else:
+            return output
+
+
+
+
+a = Transform(processor = DLC_Live_obj, sink = led.set)
+
+
+#
+#
+# class Pipeline(multiprocessing.Process):
+#
+#     def __init__(self, input, stages):
+#         """
+#
+#         Args:
+#             stages: list of dictionaries with
+#                 {'function': function to be called,
+#                  'kwargs': additional keyword arguments to be given to function}
+#         """
+#
+#         self.input = input
+#         self.stages = stages
+#
+#         self.quitting = multiprocessing.Event()
+#         self.quitting.clear()
+#
+#     def run(self):
+#
+#         # initialize stage objects
+#         self.stage_objects = []
+#         for stage in self.stages:
+#             self.stage_objects.append(stage['function'](stage['kwargs']))
+#
+#         while not self.quitting.is_set():
+#             output = self.input()
+#             for stage in self.stages:
+#                 output = self.stages.process(output)
+#
+#
+#
+#     def __call__(self, input):
+#
+#         for stage in self.stages:
+#             if 'kwargs' in stage.keys():
+#                 input = stage['function']
+#             input = stage(input)
+#
+#         return input
+
+
+
+class DLC(object):
+
+    def __init__(self, camera):
+
+        self.camera = camera
+
+        self.quitting = threading.Event()
+        self.quitting.clear()
+
+
+    def transform(self):
+        self._thread = threading.Thread(target=self._transform)
+
+
+    def _transform(self):
+
+        while not self.quitting.is_set():
+
+
+
+
+
+
 
 class Img2Loc_binarymass(object):
     METHODS = ('largest')
@@ -51,6 +176,7 @@ class Img2Loc_binarymass(object):
             return centroids[largest_ind], thresh
         else:
             return centroids[largest_ind]
+
 
 
 
