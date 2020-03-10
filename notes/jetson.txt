@@ -13,3 +13,5 @@ https://github.com/NVIDIA/jetson-gpio/blob/master/samples/simple_pwm.py
 tensorflow
 https://docs.nvidia.com/deeplearning/frameworks/install-tf-jetson-platform/index.html
 
+** just download the tensorflow wheel from
+https://developer.nvidia.com/embedded/downloads
