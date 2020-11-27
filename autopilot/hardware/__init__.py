@@ -37,6 +37,7 @@ Warning:
 
 from autopilot import prefs
 from autopilot.core.networking import Net_Node
+from autopilot.utils.registry import HardwareRegistry
 from datetime import datetime
 import os
 import logging
@@ -71,7 +72,7 @@ dict: The inverse of :const:`BOARD_TO_BCM`.
 """
 
 
-class Hardware(object):
+class Hardware(metaclass=HardwareRegistry):
     """
     Generic class inherited by all hardware. Should not be instantiated
     on its own (but it won't do anything bad so go nuts i guess).

@@ -53,6 +53,7 @@ from autopilot.core.networking import Pilot_Station, Net_Node, Message
 from autopilot import external
 from autopilot import tasks
 from autopilot.hardware import gpio
+from autopilot.utils.registry import TaskRegistry
 
 
 ########################################
@@ -307,7 +308,8 @@ class Pilot:
             if 'child' in value.keys():
                 task_class = tasks.CHILDREN_LIST[value['task_type']]
             else:
-                task_class = tasks.TASK_LIST[value['task_type']]
+                task_class = TaskRegistry.get_class_from_name(value['task_type'])
+
             # Instantiate the task
             self.stage_block.clear()
 
@@ -315,12 +317,9 @@ class Pilot:
             self.subject = value['subject']
             prefs.add('SUBJECT', self.subject)
 
-
-
             # Run the task and tell the terminal we have
             # self.running.set()
             threading.Thread(target=self.run_task, args=(task_class, value)).start()
-
 
             self.update_state()
         except Exception as e:

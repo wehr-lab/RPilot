@@ -17,7 +17,7 @@ from collections import OrderedDict as odict
 from autopilot.core.networking import Net_Node
 
 from autopilot import prefs
-TASK = 'GoNoGo'
+
 
 class GoNoGo(Task):
     """
@@ -30,6 +30,8 @@ class GoNoGo(Task):
         use it yourself :)
 
     """
+
+    NAME = 'GoNoGo'
 
     STAGE_NAMES = ["request", "discrim", "reinforcement"]
 
@@ -130,7 +132,6 @@ class GoNoGo(Task):
 
         self.stages = itertools.cycle([self.request, self.discrim, self.reinforce])
 
-
     def request(self):
         # wait for the subject to hold the wheel still
         # Set the event lock
@@ -212,10 +213,6 @@ class GoNoGo(Task):
 
 
         return data
-
-
-
-
 
     def reinforce(self):
         # don't clear stage block here to quickly move on

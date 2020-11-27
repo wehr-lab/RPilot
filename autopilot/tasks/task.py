@@ -1,4 +1,5 @@
 # Base class for tasks
+import abc
 from collections import OrderedDict as odict
 import threading
 from datetime import datetime
@@ -8,6 +9,7 @@ import tables
 # from autopilot.core.networking import Net_Node
 from autopilot.hardware import BCM_TO_BOARD
 from autopilot import prefs
+from autopilot.utils.registry import TaskRegistry
 
 if hasattr(prefs, "AUDIOSERVER"):
     if prefs.AUDIOSERVER == 'pyo':
@@ -16,7 +18,7 @@ if hasattr(prefs, "AUDIOSERVER"):
         pass
 
 
-class Task(object):
+class Task(metaclass=TaskRegistry):
     """
     Generic Task metaclass
 
@@ -77,19 +79,23 @@ class Task(object):
 
 
     """
+
+    # Provide human-readable task name here; if None the class name
+    # will be used (see "get_name(...)" class method below).
+    NAME = None
+
     # dictionary of Params needed to define task,
     # these should correspond to argument names for the task
     PARAMS = odict()
 
     # Task Definition
-    HARDWARE = {} # Hardware needed to run the task
-    STAGE_NAMES = [] # list of names of stage methods
-    PLOT = {} # dictionary of plotting params
+    HARDWARE = {}  # Hardware needed to run the task
+    STAGE_NAMES = []  # list of names of stage methods
+    PLOT = {}  # dictionary of plotting params
+
     class TrialData(tables.IsDescription):
         trial_num = tables.Int32Col()
         session = tables.Int32Col()
-
-
 
     def __init__(self, *args, **kwargs):
 
@@ -115,8 +121,14 @@ class Task(object):
         self.init_logging()
         self.logger.debug('Task Metaclass initialized')
 
+    @classmethod
+    def get_name(cls):
+        """Get task name"""
 
-
+        if cls.NAME is None:
+            return cls.__name__
+        else:
+            return cls.NAME
 
     def init_hardware(self):
         """
