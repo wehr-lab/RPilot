@@ -208,6 +208,7 @@ class Autopilot_Form(nps.Form):
 
 
 class Hardware_Form(nps.FormWithMenus):
+
     def __init__(self, *args, **kwargs):
         self.input = odict()
         self.altrely = 4
@@ -217,13 +218,12 @@ class Hardware_Form(nps.FormWithMenus):
     def create(self):
         self.add(nps.FixedText, value="Use the ctrl+X menu to add new hardware", editable=False, color="VERYGOOD")
 
-        hardware_objs = self.list_hardware()
+        for hw_category, hw_classes in self.list_hardware().items():
 
-        for module, hardware_classes in hardware_objs.items():
+            category_menu = self.add_menu(hw_category)
+            for cls in hw_classes:
+                category_menu.addItem(text=cls.__name__, onSelect=self.add_hardware, arguments=[cls])
 
-            mod_menu = self.add_menu(module)
-            for class_name in hardware_classes:
-                mod_menu.addItem(text=class_name, onSelect=self.add_hardware, arguments=[module, class_name])
 
     #
     # def init_hardware(self):
@@ -234,41 +234,25 @@ class Hardware_Form(nps.FormWithMenus):
     # def add_hardware_widget(self, sigs):
     #
 
-
     def list_hardware(self):
-        # start at the top of the autopilot hardware package and work down
-        # get all classes that are defined within the hardware module
-        base_hardware = [m[0]for m in inspect.getmembers(hardware, inspect.isclass) if m[1].__module__ == hardware.__name__]
 
-        hardware_path = os.path.dirname(hardware.__file__)
+        from autopilot.utils.registry import HardwareRegistry
 
-        # get names of modules
-        submodules = [mod for _, mod, _ in pkgutil.iter_modules([hardware_path])]
-        submod_paths = [os.path.join(hardware_path, mod)+'.py' for mod in submodules]
+        hw_category = {}
+        for cls in HardwareRegistry.devices:
+            cg = cls.get_category()
+            if not cg in hw_category:
+                hw_category[cg] = []
+            hw_category[cg].append(cls)
 
-        # we don't want to have to import all the hardware modules just to get a list of them,
-        # and only want to try to import them if the user wants to add one to their system
-        # so we have to parse the files to get the names of the classes
+        return hw_category
 
-        hardware_objs = {}
-        for submod_name, submod in zip(submodules, submod_paths):
-            with open(submod, 'r') as submod_f:
-                submod_ast = ast.parse(submod_f.read())
-
-            submod_classes = [n.name for n in submod_ast.body if isinstance(n, ast.ClassDef) and n.name not in hardware.META_CLASS_NAMES]
-            hardware_objs[submod_name] = submod_classes
-
-        return hardware_objs
-
-
-
-
-    def add_hardware(self, module, class_name):
-        #self.nextrely = 1
+    def add_hardware(self, hw_class):
+        # self.nextrely = 1
         self.DISPLAY()
 
         # import the class
-        hw_class = getattr(importlib.import_module("autopilot.hardware."+module), class_name)
+        # hw_class = getattr(importlib.import_module("autopilot.hardware." + module), class_name)
         # get its parent classes (which includes class itself)
         hw_parents = inspect.getmro(hw_class)
         # get signatures for each
@@ -293,43 +277,34 @@ class Hardware_Form(nps.FormWithMenus):
                     sigs.append((param_name, param_default))
                     param_names.append(param_name)
 
-        MODULE = module.upper()
-        # create title and input widgets for arguments
+        cls_path = cls.__module__ + '.' + cls.__name__ if cls.__module__ else cls.__name__
+        self.add(nps.FixedText, value=cls_path, rely=self.altrely, editable=False,
+                 color="VERYGOOD")
 
-        #pdb.set_trace()
-
-        self.add(nps.FixedText, value="{}.{}".format(module, class_name), rely=self.altrely, editable=False, color="VERYGOOD")
-
-        self.altrely+=1
+        self.altrely += 1
 
         hw_widgets = {}
-        hw_widgets['type'] = "{}.{}".format(module, class_name)
+        hw_widgets['type'] = cls_path
         for sig in sigs:
             if sig[1] is None:
                 sig = (sig[0], '')
 
-
-            #if isinstance(sig[1], bool):
+            # if isinstance(sig[1], bool):
             #    hw_widgets.append(self.add(nps.CheckBox, name=sig[0], value=sig[1], rely=self.altrely))
-            #else:
+            # else:
             hw_widgets[sig[0]] = self.add(nps.TitleText, name=sig[0], value=str(sig[1]), rely=self.altrely)
 
-            self.altrely+=1
-        self.altrely+=1
+            self.altrely += 1
+        self.altrely += 1
 
-        if MODULE not in self.input.keys():
-            self.input[MODULE] = []
+        category = hw_class.get_category().upper()
+        if category not in self.input.keys():
+            self.input[category] = []
 
-        self.input[MODULE].append(hw_widgets)
+        self.input[category].append(hw_widgets)
 
     def afterEditing(self):
         self.parentApp.setNextForm(None)
-
-
-
-
-
-
 
 
 class Agent_Form(nps.Form):

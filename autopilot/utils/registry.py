@@ -29,8 +29,8 @@ class TaskRegistry(type):
 
     def __init__(cls, name, bases, attrs):
         if name != 'Task':
-            print("Register task", _fullname(cls))  # TODO: use logger
             if _fullname(cls) not in (_fullname(_) for _ in TaskRegistry.tasks):
+                # print("Register task", _fullname(cls))  # TODO: use logger
                 TaskRegistry.tasks.append(cls)
 
     @classmethod
@@ -55,11 +55,14 @@ class HardwareRegistry(type):
 
     devices = []
 
-    def __init__(cls, name, bases, attrs):
-        if name != 'Hardware':
-            print("Register hardware", _fullname(cls))  # TODO: use logger
-            if _fullname(cls) not in (_fullname(_) for _ in HardwareRegistry.devices):
-                HardwareRegistry.devices.append(cls)
+    @classmethod
+    def register(cls, **kwargs):
+        def decorator(cls_):
+            if _fullname(cls_) not in (_fullname(_) for _ in HardwareRegistry.devices):
+                # print("Register hardware", _fullname(cls_))  # TODO: use logger
+                cls.devices.append(cls_)
+            return cls_
+        return decorator
 
 
 def load_user_paths():

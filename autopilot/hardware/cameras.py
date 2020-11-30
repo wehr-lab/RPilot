@@ -46,6 +46,7 @@ except:
 
 from autopilot import prefs
 from autopilot.hardware import Hardware
+from autopilot.utils.registry import HardwareRegistry
 
 OPENCV_LAST_INIT_TIME = mp.Value('d', 0.0)
 """
@@ -110,6 +111,7 @@ class Camera(Hardware):
 
 
     """
+
     input = True #: test documenting input
     type = "CAMERA" #: (str): what are we anyway?
     trigger = False
@@ -178,6 +180,10 @@ class Camera(Hardware):
 
         if 'queue' in kwargs.keys():
             self.queue(**kwargs['queue'])
+
+    @classmethod
+    def get_category(cls):
+        return 'Camera'
 
     def capture(self, timed = None):
         """
@@ -577,8 +583,9 @@ class Camera(Hardware):
 
 
 
-
+@HardwareRegistry.register()
 class Camera_CV(Camera):
+
     def __init__(self, camera_idx = 0, **kwargs):
         """
         Capture Video from a webcam with OpenCV
@@ -782,6 +789,7 @@ class Camera_CV(Camera):
         return self._v4l_info
 
 
+@HardwareRegistry.register()
 class Camera_Spinnaker(Camera):
 
     type="CAMERA_SPIN"

@@ -4,6 +4,7 @@ from autopilot import prefs
 from autopilot.core.networking import Net_Node
 from autopilot.hardware import Hardware
 from autopilot.hardware.cameras import Camera
+from autopilot.utils.registry import HardwareRegistry
 
 import threading
 import time
@@ -28,7 +29,7 @@ except ImportError:
     MLX90640_LIB = False
 
 
-
+@HardwareRegistry.register()
 class I2C_9DOF(Hardware):
     """
     A `Sparkfun 9DOF<https://www.sparkfun.com/products/13944>`_ combined accelerometer, magnetometer, and gyroscope.
@@ -161,6 +162,10 @@ class I2C_9DOF(Hardware):
         self._accel_mg_lsb = None
         self._mag_mgauss_lsb = None
         self._gyro_dps_digit = None
+
+    @classmethod
+    def get_category(cls):
+        return 'i2c'
 
     @property
     def accel_range(self):
@@ -312,6 +317,8 @@ class I2C_9DOF(Hardware):
             return val - (1 << bits)
         return val
 
+
+@HardwareRegistry.register()
 class MLX90640(Camera):
     """
     A MLX90640 Temperature sensor.
@@ -393,8 +400,9 @@ class MLX90640(Camera):
         self.integrate_frames = integrate_frames
         self.interpolate = interpolate
 
-
-
+    @classmethod
+    def get_category(cls):
+        return 'i2c'
 
     @property
     def fps(self):

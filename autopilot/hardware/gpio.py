@@ -21,6 +21,7 @@ import itertools
 from autopilot import prefs
 from autopilot.hardware import Hardware, BOARD_TO_BCM
 from autopilot import external
+from autopilot.utils.registry import HardwareRegistry
 
 ENABLED = False
 """
@@ -153,6 +154,9 @@ class GPIO(Hardware):
         if not self.CONNECTED:
             RuntimeError('No connection could be made to the pigpio daemon')
 
+    @classmethod
+    def get_category(self):
+        return 'GPIO'
 
     def init_pigpio(self):
         """
@@ -265,6 +269,7 @@ class GPIO(Hardware):
         self.pig.stop()
 
 
+@HardwareRegistry.register()
 class Digital_Out(GPIO):
     """
     TTL/Digital logic out through a GPIO pin.
@@ -595,6 +600,7 @@ class Digital_Out(GPIO):
             super(Digital_Out, self).release()
 
 
+@HardwareRegistry.register()
 class Digital_In(GPIO):
     """
     Record digital input and call one or more callbacks on logic transition.
@@ -874,6 +880,7 @@ class PWM(Digital_Out):
             pass
 
 
+@HardwareRegistry.register()
 class LED_RGB(Digital_Out):
 
     output = True
@@ -1191,6 +1198,7 @@ class LED_RGB(Digital_Out):
         self.logger.warning('pull cant be set via the attribute')
 
 
+@HardwareRegistry.register()
 class Solenoid(Digital_Out):
     """
     Solenoid valve for water delivery.
