@@ -75,8 +75,8 @@ dict: The inverse of :const:`BOARD_TO_BCM`.
 
 class Hardware(metaclass=abc.ABCMeta):
     """
-    Generic class inherited by all hardware. Should not be instantiated
-    on its own (but it won't do anything bad so go nuts i guess).
+    Generic class inherited by all hardware. All derived classes must
+    implement the "get_category()" class method.
 
     Primarily for the purpose of defining necessary attributes.
 
@@ -122,7 +122,7 @@ class Hardware(metaclass=abc.ABCMeta):
     @classmethod
     @abc.abstractmethod
     def get_category(cls):
-        """The hardware category (string) is used during autopilot setup"""
+        """A hardware category string (used during autopilot setup)"""
         pass
 
     def release(self):

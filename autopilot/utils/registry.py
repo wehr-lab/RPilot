@@ -51,7 +51,15 @@ class TaskRegistry(type):
 
 
 class HardwareRegistry(type):
-    """Register all hardware instances."""
+    """Register hardware instances using decorators
+
+    Basic usage:
+
+    @HardwareRegistry.register()
+    class MyHardwareClass(Hardware):
+        ...
+
+    """
 
     devices = []
 
