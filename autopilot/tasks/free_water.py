@@ -8,7 +8,6 @@ import autopilot.hardware.gpio
 
 from autopilot.tasks.task import Task
 
-TASK = 'Free_water'
 
 class Free_Water(Task):
     """
@@ -26,6 +25,8 @@ class Free_Water(Task):
         num_stages (int): number of stages in task (2)
         stages (:class:`itertools.cycle`): iterator to cycle indefinitely through task stages.
     """
+
+    NAME = 'Free Water'
 
     STAGE_NAMES = ["water", "response"]
 

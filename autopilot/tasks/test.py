@@ -32,6 +32,9 @@ class DLC_Latency(Task):
     * Pilot sends GPIO pulse
 
     """
+
+    NAME = 'Test_DLC_Latency'
+
     STAGE_NAMES = ['trig', 'wait']
 
     PARAMS = odict()
@@ -94,7 +97,6 @@ class DLC_Latency(Task):
             'transform': []
         }
     }
-
 
     def __init__(self,
                  child_id: str,
@@ -277,7 +279,11 @@ class DLC_Latency(Task):
             self.handle_trigger(pin="CAMERA")
             self.hardware['DIGITAL_OUT']['C'].pulse()
 
+
 class DLC_Hand(Task):
+
+    NAME = 'Test_DLC_Hand'
+
     STAGE_NAMES = ['noop']
 
     PARAMS = odict()
@@ -401,7 +407,6 @@ class DLC_Hand(Task):
         #                                    subject=self.subject)
 
         self.stages = cycle([self.noop])
-
 
     def noop(self):
         if self.stage_block:

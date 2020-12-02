@@ -43,8 +43,7 @@ from functools import wraps
 from autopilot.core.utils import InvokeEvent
 from autopilot.core import styles
 from autopilot.core.utils import get_invoker
-
-
+from autopilot.utils.registry import TaskRegistry
 
 
 def gui_event(fn):
@@ -870,7 +869,7 @@ class Protocol_Wizard(QtWidgets.QDialog):
         addstep_label = QtWidgets.QLabel("Add Step")
         addstep_label.setFixedHeight(40)
         self.task_list = QtWidgets.QListWidget()
-        self.task_list.insertItems(0, tasks.TASK_LIST.keys())
+        self.task_list.insertItems(0, TaskRegistry.get_task_names())
         self.add_button = QtWidgets.QPushButton("+")
         self.add_button.setFixedHeight(40)
         self.add_button.clicked.connect(self.add_step)
@@ -936,7 +935,7 @@ class Protocol_Wizard(QtWidgets.QDialog):
         task_type = self.task_list.currentItem().text()
         new_item = QtWidgets.QListWidgetItem()
         new_item.setText(task_type)
-        task_params = copy.deepcopy(tasks.TASK_LIST[task_type].PARAMS)
+        task_params = copy.deepcopy(TaskRegistry.get_class_from_name(task_type).PARAMS)
 
         # Add params that are non-task specific
         # Name of task type
@@ -1172,7 +1171,7 @@ class Graduation_Widget(QtWidgets.QWidget):
         # Grad type dropdown
         type_label = QtWidgets.QLabel("Graduation Criterion:")
         self.type_selection = QtWidgets.QComboBox()
-        self.type_selection.insertItems(0, tasks.GRAD_LIST.keys())
+        self.type_selection.insertItems(0, list(tasks.GRAD_LIST.keys()))
         self.type_selection.currentIndexChanged.connect(self.populate_params)
 
         # Param form
@@ -2559,7 +2558,7 @@ class Weights(QtWidgets.QTableWidget):
                 self.setItem(row, j, item)
 
         # make headers
-        self.setHorizontalHeaderLabels(self.colnames.values())
+        self.setHorizontalHeaderLabels(list(self.colnames.values()))
         self.resizeColumnsToContents()
         self.updateGeometry()
         self.adjustSize()

@@ -21,9 +21,6 @@ from autopilot import prefs
 import pdb
 import pickle
 
-# This declaration allows Subject to identify which class in this file contains the task class. Could also be done with __init__ but yno I didnt for no reason.
-# TODO: Move this to __init__
-TASK = 'Nafc'
 
 class Nafc(Task):
     """
@@ -50,6 +47,9 @@ class Nafc(Task):
         current_stage (int): As each stage is reached, update for asynchronous event reference
 
     """
+
+    NAME = '2AFC'
+
     STAGE_NAMES = ["request", "discrim", "reinforcement"]
 
     # Class attributes
@@ -126,7 +126,6 @@ class Nafc(Task):
             'R': gpio.Solenoid
         }
     }
-
 
     def __init__(self, stage_block=None, stim=None, reward=50, req_reward=False,
                  punish_stim=False, punish_dur=100, correction=False, correction_pct=50.,
@@ -241,7 +240,6 @@ class Nafc(Task):
     #     # We use this to handle the subject leaving the port early
     #     if self.discrim_playing:
     #         self.bail_trial()
-
 
     ##################################################################################
     # Stage Functions
@@ -461,7 +459,11 @@ class Nafc(Task):
             if isinstance(v, gpio.LED_RGB):
                 v.flash(self.punish_dur)
 
+
 class Nafc_Gap(Nafc):
+
+    NAME = '2AFC_Gap'
+
     PARAMS = copy(Nafc.PARAMS)
     del PARAMS['punish_stim']
     PARAMS['noise_amplitude'] = {'tag':'Amplitude of continuous white noise',
@@ -491,7 +493,6 @@ class Nafc_Gap(Nafc):
         self.noise.play_continuous()
         self.logger.debug('background sound started')
 
-
     def end(self):
         """
         Stop the task, ending the continuous white noise.
@@ -501,6 +502,9 @@ class Nafc_Gap(Nafc):
 
 
 class Nafc_Gap_Laser(Nafc_Gap):
+
+    NAME = '2AFC_Gap_Laser'
+
     PARAMS = copy(Nafc_Gap.PARAMS)
     PARAMS['laser_probability'] = {'tag': 'Probability (of trials whose targets match laser_mode) of laser being turned on (0-1)',
                                    'type':'float'}

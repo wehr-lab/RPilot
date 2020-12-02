@@ -15,8 +15,10 @@ from inputs import devices
 from autopilot import prefs
 from autopilot.core.networking import Net_Node
 from autopilot.hardware import Hardware
+from autopilot.utils.registry import HardwareRegistry
 
 
+@HardwareRegistry.register()
 class Wheel(Hardware):
     """
     A continuously measured mouse wheel.
@@ -116,6 +118,9 @@ class Wheel(Hardware):
         if start:
             self.start()
 
+    @classmethod
+    def get_category(self):
+        return "USB"
 
     def start(self):
         self.thread = threading.Thread(target=self._record)
@@ -325,6 +330,7 @@ class Wheel(Hardware):
         self.quit_evt.clear()
 
 
+@HardwareRegistry.register()
 class Scale(Hardware):
     """
     Note:
@@ -358,3 +364,7 @@ class Scale(Hardware):
                                     idProduct=self.product_id)
         # default configuration
         self.device.set_configuration()
+
+    @classmethod
+    def get_category(cls):
+        return "USB"

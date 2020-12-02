@@ -17,9 +17,12 @@ from autopilot.tasks import Task
 from autopilot.core.networking import Net_Node
 
 from autopilot import prefs
-TASK = 'Parallax'
+
 
 class Parallax(Task):
+
+    NAME = 'Parallax'
+
     STAGE_NAMES = ["initiate", "jump", "reinforcement"]
 
     PLOT = {

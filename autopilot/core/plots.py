@@ -40,6 +40,7 @@ from autopilot.core.utils import get_invoker
 from .utils import InvokeEvent, Invoker
 from autopilot.core.networking import Net_Node
 from autopilot.core.loggers import init_logger
+from autopilot.utils.registry import TaskRegistry
 
 
 ############
@@ -319,7 +320,7 @@ class Plot(QtWidgets.QWidget):
         self.state = "INITIALIZING"
 
         # We're sent a task dict, we extract the plot params and send them to the plot object
-        self.plot_params = tasks.TASK_LIST[value['task_type']].PLOT
+        self.plot_params = TaskRegistry.get_class_from_name(value['task_type']).PLOT
 
         if 'continuous' in self.plot_params.keys():
             if self.plot_params['continuous']:
