@@ -209,16 +209,6 @@ class Hardware_Form(nps.FormWithMenus, Autopilot_Form):
             for cls in hw_classes:
                 category_menu.addItem(text=cls.__name__, onSelect=self.add_hardware, arguments=[cls])
 
-
-    #
-    # def init_hardware(self):
-    #     global prefs
-    #     if 'HARDWARE' in prefs.keys():
-    #         for hw_group, hardware_name in prefs
-    #
-    # def add_hardware_widget(self, sigs):
-    #
-
     def list_hardware_olde(self):
         # FIXME: obvs lol
         # start at the top of the autopilot hardware package and work down
@@ -253,7 +243,7 @@ class Hardware_Form(nps.FormWithMenus, Autopilot_Form):
 
         hw_category = {}
         for cls in HardwareRegistry.devices:
-            cg = cls.get_category()
+            cg = cls.category()
             if not cg in hw_category:
                 hw_category[cg] = []
             hw_category[cg].append(cls)
@@ -370,7 +360,7 @@ class Hardware_Form(nps.FormWithMenus, Autopilot_Form):
             self.altrely += 1
         self.altrely += 1
 
-        category = hw_class.get_category().upper()
+        category = hw_class.category().upper()
         if category not in self.input.keys():
             self.input[category] = []
 

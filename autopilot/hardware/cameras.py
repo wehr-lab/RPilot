@@ -115,6 +115,7 @@ class Camera(Hardware):
     input = True #: test documenting input
     type = "CAMERA" #: (str): what are we anyway?
     trigger = False
+    category = 'Camera'
 
     def __init__(self, fps=None, timed=False, crop=None, **kwargs):
         """
@@ -180,10 +181,6 @@ class Camera(Hardware):
 
         if 'queue' in kwargs.keys():
             self.queue(**kwargs['queue'])
-
-    @classmethod
-    def get_category(cls):
-        return 'Camera'
 
     def capture(self, timed = None):
         """

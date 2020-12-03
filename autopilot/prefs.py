@@ -232,8 +232,8 @@ _DEFAULTS = odict({
     },
     'PLUGINDIR': {
         'type': 'str',
-        "text": "Directory to import ",
-        "default": os.path.join(os.path.expanduser("~"), "autopilot"),
+        "text": "Directory to import user-written tasks and hardware objects!",
+        "default": str(_basedir / 'plugins'),
         "scope": Scopes.DIRECTORY
     },
     'REPODIR': {

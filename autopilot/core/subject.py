@@ -482,7 +482,7 @@ class Subject(object):
         # memory, we can just keep appending to keep things simple.
         for i, step in enumerate(self.current):
             # First we get the task class for this step
-            task_class = TaskRegistry.get_class_from_name(step['task_type'])
+            task_class = TaskRegistry.get(step['task_type'])
             step_name = step['step_name']
             # group name is S##_'step_name'
             group_name = "S{:02d}_{}".format(i, step_name)
@@ -656,7 +656,7 @@ class Subject(object):
         #     self.session = 0
 
         # prepare continuous data group and tables
-        task_class = TaskRegistry.get_class_from_name(task_params['task_type'])
+        task_class = TaskRegistry.get(task_params['task_type'])
         cont_group = None
         if hasattr(task_class, 'ContinuousData'):
 

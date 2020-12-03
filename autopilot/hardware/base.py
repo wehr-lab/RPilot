@@ -42,6 +42,7 @@ from datetime import datetime
 import os
 import logging
 import abc
+from abc import ABC, abstractmethod
 
 # FIXME: Hardcoding names of metaclasses, should have some better system of denoting which classes can be instantiated
 # directly for setup and prefs management.
@@ -73,12 +74,19 @@ dict: The inverse of :const:`BOARD_TO_BCM`.
 """
 
 
-class Hardware(metaclass=abc.ABCMeta):
+class Hardware(ABC, metaclass=HardwareRegistry):
     """
-    Generic class inherited by all hardware. All derived classes must
-    implement the "get_category()" class method.
+    Generic abstract class inherited by all hardware.
 
-    Primarily for the purpose of defining necessary attributes.
+    Subclasses must override...
+
+    **Class attributes:**
+
+        - **category** - how to group the hardware, typically by i/o modality and inheritance
+
+    **Methods**
+
+        - **release** - how to cleanup after the object
 
     Also defines `__del__` to call `release()` so objects are always released
     even if not explicitly.
@@ -93,8 +101,6 @@ class Hardware(metaclass=abc.ABCMeta):
         input (bool): Is this an input device?
         output (bool): Is this an output device?
     """
-    # metaclass for hardware objects
-    # category = None
 
     is_trigger = False
     pin = None
@@ -119,12 +125,13 @@ class Hardware(metaclass=abc.ABCMeta):
         self.node = None
         self.init_logging()
 
-    @classmethod
-    @abc.abstractmethod
-    def get_category(cls):
+    @property
+    @abstractmethod
+    def category(self):
         """A hardware category string (used during autopilot setup)"""
         pass
 
+    @abstractmethod
     def release(self):
         """
         Every hardware device needs to redefine `release()`, and must

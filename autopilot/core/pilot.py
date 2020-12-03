@@ -288,7 +288,7 @@ class Pilot:
             if 'child' in value.keys():
                 task_class = tasks.CHILDREN_LIST[value['task_type']]
             else:
-                task_class = TaskRegistry.get_class_from_name(value['task_type'])
+                task_class = TaskRegistry.get(value['task_type'])
 
             # Instantiate the task
             self.stage_block.clear()

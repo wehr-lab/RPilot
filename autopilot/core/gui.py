@@ -869,7 +869,7 @@ class Protocol_Wizard(QtWidgets.QDialog):
         addstep_label = QtWidgets.QLabel("Add Step")
         addstep_label.setFixedHeight(40)
         self.task_list = QtWidgets.QListWidget()
-        self.task_list.insertItems(0, TaskRegistry.get_task_names())
+        self.task_list.insertItems(0, TaskRegistry.get_names())
         self.add_button = QtWidgets.QPushButton("+")
         self.add_button.setFixedHeight(40)
         self.add_button.clicked.connect(self.add_step)
@@ -935,7 +935,7 @@ class Protocol_Wizard(QtWidgets.QDialog):
         task_type = self.task_list.currentItem().text()
         new_item = QtWidgets.QListWidgetItem()
         new_item.setText(task_type)
-        task_params = copy.deepcopy(TaskRegistry.get_class_from_name(task_type).PARAMS)
+        task_params = copy.deepcopy(TaskRegistry.get(task_type).PARAMS)
 
         # Add params that are non-task specific
         # Name of task type

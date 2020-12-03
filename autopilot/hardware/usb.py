@@ -29,6 +29,7 @@ class Wheel(Hardware):
         'vel' thresh_type not implemented
     """
 
+    category= 'USB'
     input   = True
     type    = "Wheel"
     trigger = False # even though this is a triggerable option, typically don't want to assign a cb and instead us a GPIO
@@ -117,10 +118,6 @@ class Wheel(Hardware):
 
         if start:
             self.start()
-
-    @classmethod
-    def get_category(self):
-        return "USB"
 
     def start(self):
         self.thread = threading.Thread(target=self._record)
@@ -337,6 +334,7 @@ class Scale(Hardware):
         Not implemented, working on using a digital scale to
         make weighing faster.
     """
+    category='USB'
     MODEL={
         'stamps.com':{
             'vendor_id':0x1446,
@@ -365,6 +363,3 @@ class Scale(Hardware):
         # default configuration
         self.device.set_configuration()
 
-    @classmethod
-    def get_category(cls):
-        return "USB"

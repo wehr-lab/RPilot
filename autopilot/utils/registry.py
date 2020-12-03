@@ -9,12 +9,15 @@ https://github.com/cortex-lab/phy/blob/master/phy/utils/plugin.py
 
 import os
 import os.path as op
-import imp
+# import imp
 import importlib
 from pathlib import Path
 import json
+import inspect
+import sys
 
 from autopilot import prefs
+from autopilot.core.loggers import init_logger
 
 
 def _fullname(o):
@@ -22,35 +25,154 @@ def _fullname(o):
     return o.__module__ + "." + o.__name__ if o.__module__ else o.__name__
 
 
-class TaskRegistry(type):
-    """Register all task instances."""
+class Registry(type):
+    """
+    Factory metaclass to make registries.
 
-    tasks = []
+    Each registry keeps track of `_items` in a dictionary. `_items` is initially None,
+    and is created as each sub_registry is used for the first time. Otherwise, subregistries
+    inherit the top-level _items dictionary and they all have the same elements.
+
+    The Registry then keeps track of objects that it creates using the __init__ method.
+    """
+    _items = None # type: dict
+    _instances = None # type: dict
+    _logger = None
+    _plugin_classes = None
+    """
+    list of classes that are imported through plugins.
+    """
+
+    _plugin_modules = [] # type: list
+    """
+    Keep a list of plugin modules imported with :meth:`.import_plugins` common to all registries so they can
+    check if the object is in one of those registries.
+    """
 
     def __init__(cls, name, bases, attrs):
-        if name != 'Task':
-            if _fullname(cls) not in (_fullname(_) for _ in TaskRegistry.tasks):
-                # print("Register task", _fullname(cls))  # TODO: use logger
-                TaskRegistry.tasks.append(cls)
+        """
+        Add the newly created item to the _items dictionary and register it!!
+        """
+        print('init')
+
+        cls._items[name] = cls
+        type.__init__(cls, name, bases, attrs)
+
+    def __new__(cls, name, bases, attrs):
+        """
+        Called with the Sub-Registry as the cls attribute,
+        create the _items dictionary if none has been created yet.
+        """
+        print('new')
+
+        if cls._items is None:
+            cls._items = {}
+            cls._instances = {}
+            cls._plugin_classes = []
+            cls._logger = init_logger(module_name='registry', class_name=cls.__name__)
+            cls.init_registry()
+
+        return type.__new__(cls, name, bases, attrs)
 
     @classmethod
-    def get_task_names(cls):
-        return [x.get_name() for x in TaskRegistry.tasks]
+    def register(cls, **kwargs):
+        """
+        If subclassing don't work for some reason, a decorator ya can use to register
+
+        .. Examples::
+
+            @HardwareRegistry.register
+            class Some_Hardware_Object(Hardware):
+                pass
+
+        """
+        def decorator(cls_):
+            cls._items[cls_.__name__] = cls_
+            # if _fullname(cls_) not in (_fullname(_) for _ in HardwareRegistry.devices):
+            #     # print("Register hardware", _fullname(cls_))  # TODO: use logger
+            #     cls.devices.append(cls_)
+            return cls_
+        return decorator
 
     @classmethod
-    def get_class_from_name(mcs, name):
-        """This will return None for unregistered classes"""
+    def get_names(cls):
+        return list(cls._items.keys())
 
-        cls = None
+    @classmethod
+    def get(cls, key):
+        return cls._items[key]
 
-        names = TaskRegistry.get_task_names()
-        if name in names:
-            cls = TaskRegistry.tasks[names.index(name)]
+    @classmethod
+    def register_instance(cls, new_instance):
+        cls._instances[new_instance.__class__.__name__] = new_instance
 
-        return cls
+    @classmethod
+    def init_registry(cls):
+        """
+        Hook to call once when the registry is first invoked.
+        """
+        pass
+
+    @classmethod
+    def import_plugins(cls):
+        """
+        Iterate through python files in ``prefs.PLUGINDIR``, importing them, and thus registering them!
+
+        """
+
+        plugin_dir = prefs.get('PLUGINDIR')
+        if plugin_dir is None:
+            cls._logger.warning('No plugin dir found!')
+            return
+
+        # recursively list python files in plugin directory
+        plugin_files = Path(plugin_dir).glob('**/*.py')
+        for pfile in plugin_files:
+            # prepend autopilot.plugins to avoid namespace clashes and make them uniformly moduled
+            module_name = 'autopilot.plugins.' + inspect.getmodulename(pfile)
+
+            # import module
+            try:
+                if module_name in sys.modules:
+                    mod = sys.modules[module_name]
+                else:
+                    mod_spec = importlib.util.spec_from_file_location(module_name, pfile)
+                    mod = importlib.util.module_from_spec(mod_spec)
+                    mod_spec.loader.exec_module(mod)
+                    sys.modules[module_name] = mod
+            except Exception as e:
+                cls._logger.exception(f'plugin file {str(pfile)} could not be imported, got exception: {e}')
+                continue
+
+            # get the imported modules and check if they're one of ours
+            # filter for classes, and then filter if the class of the class (aka the metaclass, aka the registry)
+            # if this particular registry
+            members = [m for m in inspect.getmembers(mod) if inspect.isclass(m[1]) and m[1].__class__ is cls]
+            if len(members)>0:
+                for m in members:
+                    if m not in cls._plugin_classes:
+                        cls._plugin_classes.append(m)
 
 
-class HardwareRegistry(type):
+
+
+
+
+
+class TaskRegistry(Registry):
+
+    @classmethod
+    def init_registry(cls):
+        cls.import_plugins()
+        import autopilot.tasks
+
+
+
+
+
+
+
+class HardwareRegistry(Registry):
     """Register hardware instances using decorators
 
     Basic usage:
@@ -63,14 +185,15 @@ class HardwareRegistry(type):
 
     devices = []
 
+
+
     @classmethod
-    def register(cls, **kwargs):
-        def decorator(cls_):
-            if _fullname(cls_) not in (_fullname(_) for _ in HardwareRegistry.devices):
-                # print("Register hardware", _fullname(cls_))  # TODO: use logger
-                cls.devices.append(cls_)
-            return cls_
-        return decorator
+    def init_registry(cls):
+        cls.import_plugins()
+        import autopilot.hardware
+
+    @classmethod
+    def list_hardware
 
 
 def load_user_paths():

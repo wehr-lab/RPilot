@@ -119,6 +119,8 @@ class GPIO(Hardware):
 
     """
 
+    category = "GPIO"
+
     def __init__(self, pin=None, polarity=1, pull = None, trigger = None, **kwargs):
         super(GPIO, self).__init__(**kwargs)
 
@@ -153,10 +155,6 @@ class GPIO(Hardware):
 
         if not self.CONNECTED:
             RuntimeError('No connection could be made to the pigpio daemon')
-
-    @classmethod
-    def get_category(self):
-        return 'GPIO'
 
     def init_pigpio(self):
         """

@@ -45,6 +45,8 @@ class I2C_9DOF(Hardware):
     modified to use pigpio
     """
 
+    category = 'i2c'
+
     # Internal constants and register values:
     _ADDRESS_ACCELGYRO = 0x6B
     _ADDRESS_MAG = 0x1E
@@ -162,10 +164,6 @@ class I2C_9DOF(Hardware):
         self._accel_mg_lsb = None
         self._mag_mgauss_lsb = None
         self._gyro_dps_digit = None
-
-    @classmethod
-    def get_category(cls):
-        return 'i2c'
 
     @property
     def accel_range(self):
@@ -359,6 +357,7 @@ class MLX90640(Camera):
 
     """
     type='MLX90640'
+    category='i2c'
 
     ALLOWED_FPS = (1, 2, 4, 8, 16, 32, 64) #: FPS must be one of these
     SHAPE_SENSOR = (32,24) #: (H, W) Output shape of this sensor is always the same. May differ from :attr:`MLX90640.shape` if interpolate >1
@@ -399,10 +398,6 @@ class MLX90640(Camera):
         # set attributes
         self.integrate_frames = integrate_frames
         self.interpolate = interpolate
-
-    @classmethod
-    def get_category(cls):
-        return 'i2c'
 
     @property
     def fps(self):

@@ -320,7 +320,7 @@ class Plot(QtWidgets.QWidget):
         self.state = "INITIALIZING"
 
         # We're sent a task dict, we extract the plot params and send them to the plot object
-        self.plot_params = TaskRegistry.get_class_from_name(value['task_type']).PLOT
+        self.plot_params = TaskRegistry.get(value['task_type']).PLOT
 
         if 'continuous' in self.plot_params.keys():
             if self.plot_params['continuous']:
