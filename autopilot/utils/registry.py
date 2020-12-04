@@ -15,6 +15,7 @@ from pathlib import Path
 import json
 import inspect
 import sys
+import typing
 
 from autopilot import prefs
 from autopilot.core.loggers import init_logger
@@ -36,7 +37,15 @@ class Registry(type):
     The Registry then keeps track of objects that it creates using the __init__ method.
     """
     _items = None # type: dict
-    _instances = None # type: dict
+    _instances = None # type: typing.Dict[str, typing.Dict[str, typing.Any]]
+    """
+    Register all instances of objects created.
+    
+    Store in a dict like ``{'class_name': {'instance_id':instance}}``
+    
+    Make sure objects have unique IDs, either given as their ``id`` attribute, typically taken from their id
+    specified in prefs
+    """
     _logger = None
     _plugin_classes = None
     """
