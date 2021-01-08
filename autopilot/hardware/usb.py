@@ -18,7 +18,7 @@ from autopilot.hardware import Hardware
 from autopilot.utils.registry import HardwareRegistry
 
 
-@HardwareRegistry.register()
+# @HardwareRegistry.register()
 class Wheel(Hardware):
     """
     A continuously measured mouse wheel.
@@ -327,7 +327,7 @@ class Wheel(Hardware):
         self.quit_evt.clear()
 
 
-@HardwareRegistry.register()
+# @HardwareRegistry.register()
 class Scale(Hardware):
     """
     Note:

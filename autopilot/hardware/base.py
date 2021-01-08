@@ -38,6 +38,7 @@ Warning:
 from autopilot import prefs
 from autopilot.core.networking import Net_Node
 from autopilot.utils.registry import HardwareRegistry
+from autopilot.core.loggers import init_logger
 from datetime import datetime
 import os
 import logging
@@ -74,7 +75,7 @@ dict: The inverse of :const:`BOARD_TO_BCM`.
 """
 
 
-class Hardware(ABC, metaclass=HardwareRegistry):
+class Hardware(metaclass=HardwareRegistry):
     """
     Generic abstract class inherited by all hardware.
 
@@ -118,18 +119,15 @@ class Hardware(ABC, metaclass=HardwareRegistry):
                 Warning('wasnt passed name and couldnt find from prefs for object: {}'.format(self.__str__))
                 self.name = None
 
-        self.logger = None
-        self.log_handler = None
-        self.log_formatter = None
+        self.logger = init_logger(self)
         self.listens = {}
         self.node = None
-        self.init_logging()
 
     @property
     @abstractmethod
     def category(self):
         """A hardware category string (used during autopilot setup)"""
-        pass
+        return None
 
     @abstractmethod
     def release(self):
@@ -141,7 +139,7 @@ class Hardware(ABC, metaclass=HardwareRegistry):
 
         When not redefined, a warning is given.
         """
-        Exception('The release method was not overridden by the subclass!')
+        raise Exception('The release method was not overridden by the subclass!')
 
     def assign_cb(self, trigger_fn):
         """
@@ -152,7 +150,7 @@ class Hardware(ABC, metaclass=HardwareRegistry):
         When not redefined, a warning is given.
         """
         if self.is_trigger:
-            Exception("The assign_cb method was not overridden by the subclass!")
+            raise Exception("The assign_cb method was not overridden by the subclass!")
 
     def get_name(self):
         """
@@ -162,9 +160,9 @@ class Hardware(ABC, metaclass=HardwareRegistry):
 
         # TODO: Unify identification of hardware types across prefs and hardware objects
         try:
-            our_type = prefs.HARDWARE[self.type]
+            our_type = prefs.get('HARDWARE')[self.type]
         except KeyError:
-            our_type = prefs.HARDWARE[self.__class__.__name__]
+            our_type = prefs.get('HARDWARE')[self.__class__.__name__]
 
         for name, pin in our_type.items():
             if self.pin == pin:
@@ -172,28 +170,6 @@ class Hardware(ABC, metaclass=HardwareRegistry):
             elif isinstance(pin, dict):
                 if self.pin == pin['pin']:
                     return name
-
-    def init_logging(self):
-        """
-        Initialize logging to a timestamped file in `prefs.LOGDIR` .
-
-        The logger name will be `'node.{id}'` .
-        """
-        #FIXME: Just copying and pasting from net node, should implement logging uniformly across hw objects
-        timestr = datetime.now().strftime('%y%m%d_%H%M%S')
-        log_file = os.path.join(prefs.LOGDIR, '{}_{}.log'.format(self.name, timestr))
-
-        self.logger = logging.getLogger('hardware.{}'.format(self.name))
-        self.log_handler = logging.FileHandler(log_file)
-        self.log_formatter = logging.Formatter("%(asctime)s %(levelname)s : %(message)s")
-        self.log_handler.setFormatter(self.log_formatter)
-        self.logger.addHandler(self.log_handler)
-        if hasattr(prefs, 'LOGLEVEL'):
-            loglevel = getattr(logging, prefs.LOGLEVEL)
-        else:
-            loglevel = logging.WARNING
-        self.logger.setLevel(loglevel)
-        self.logger.info('{} Logging Initiated'.format(self.name))
 
     def init_networking(self, listens=None, **kwargs):
         """
@@ -212,8 +188,8 @@ class Hardware(ABC, metaclass=HardwareRegistry):
 
         self.node = Net_Node(
             self.name,
-            upstream=prefs.NAME,
-            port=prefs.MSGPORT,
+            upstream=prefs.get('NAME'),
+            port=prefs.get('MSGPORT'),
             listens=listens,
             instance=False,
             **kwargs

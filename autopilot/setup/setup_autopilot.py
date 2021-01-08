@@ -69,6 +69,12 @@ class Autopilot_Form(nps.Form):
     Each subclass needs to override the :meth:`.create` method to add the graphical elements for the form,
     typically by using :meth:`.populate_form` with a standardized description from :mod:`autopilot.prefs` , and
     the NAME attribute. The DESCRIPTION attribute provides title text for the form
+
+    Attributes:
+        input (:class:`collections.OrderedDict`): A dict mapping input keys to npyscreen widgets -- created in :meth:`.populate_form`
+        depends (dict): a dictionary describing parameters that depend on values of other parameters -- eg. don't enable
+            setting audio options unless ``AUDIOSERVER`` is ``True``.
+        kwargs: if a dictionary of ``'params'`` is passed as a keyword argument, used in :meth:`.populate_form`
     """
 
     NAME = "" # type: str
@@ -76,13 +82,19 @@ class Autopilot_Form(nps.Form):
 
     def __init__(self, *args, **kwargs):
         self.input = odict()
-        self.depends = {}
+        self.depends = {} # type: dict
         super(Autopilot_Form, self).__init__(*args, **kwargs)
 
         if 'params' in kwargs.keys():
             self.populate_form(kwargs['params'])
 
     def populate_dependencies(self, params):
+        """
+        Find any parameters that have ``'depends'`` on other parameters and add them to :attr:`.depends`
+
+        Args:
+            params (dict): params passed on object creation
+        """
         # first find any options that other options depend on
         for param_name, param in params.items():
             if 'depends' in param.keys():
@@ -99,6 +111,12 @@ class Autopilot_Form(nps.Form):
                     self.depends[depends_on] = [(param_name, depend_value)]
 
     def populate_form(self, params):
+        """
+        Given ``params``, create npyscreen widgets
+
+        Args:
+            params (dict): params passed on object instantiation
+        """
 
         # check for existing values in global prefs
         global prefs
@@ -203,11 +221,13 @@ class Hardware_Form(nps.FormWithMenus, Autopilot_Form):
     def create(self):
         self.add(nps.FixedText, value="Use the ctrl+X menu to add new hardware", editable=False, color="VERYGOOD")
 
-        for hw_category, hw_classes in self.list_hardware().items():
+        from autopilot.utils.registry import HardwareRegistry
+
+        for hw_category, hw_classes in HardwareRegistry.list_hardware().items():
 
             category_menu = self.add_menu(hw_category)
             for cls in hw_classes:
-                category_menu.addItem(text=cls.__name__, onSelect=self.add_hardware, arguments=[cls])
+                category_menu.addItem(text=cls, onSelect=self.add_hardware, arguments=[cls])
 
     def list_hardware_olde(self):
         # FIXME: obvs lol
@@ -461,7 +481,11 @@ class Autopilot_Setup(nps.NPSAppManaged):
         'PILOT': ['AGENT', 'DIRECTORIES', 'COMMON', 'PILOT', 'HARDWARE', 'SCRIPTS']
     }
     """
-    Allow different agents to have different paths through setup
+    Allow different agents to have different paths through setup.
+    
+    For each Agent, a list of forms to call in order using :meth:`.next_form_in_path`
+    
+    Setup always starts with the :class:`.Agent_Form` which populates the :attr:`.agent` and :attr:`.path` attributes
     """
 
     def __init__(self, prefs):
@@ -475,7 +499,9 @@ class Autopilot_Setup(nps.NPSAppManaged):
 
     def onStart(self):
         """
-        Add forms by gathering subclasses of :class:`.Autopilot_Form`
+        Add forms by gathering subclasses of :class:`.Autopilot_Form` to :attr:`.forms`
+
+        Set the :class:`.Agent_Form` as the ``'MAIN'`` form -- opened first.
         """
         self.forms['AGENT'] = self.addForm('MAIN', Agent_Form, name="Select Agent")
 
@@ -484,6 +510,17 @@ class Autopilot_Setup(nps.NPSAppManaged):
             self.forms[form_class.NAME] = self.addForm(form_class.NAME, form_class, name=form_class.DESCRIPTION)
 
     def next_form_in_path(self, calling_form: Autopilot_Form):
+        """
+        Call :meth:`.setNextForm` to set the next form in the :attr:`.path`
+
+        :attr:`.path` and :attr:`.agent` will be set by :class:`.Agent_Form`
+
+        Args:
+            calling_form (:class:`.Autopilot_Form`): The currently active form
+
+        Returns:
+
+        """
         # path = self.PATHS[self.agent]
         next_ind = self.path.index(calling_form.NAME) + 1
         if next_ind >= len(self.path):
@@ -576,12 +613,13 @@ def unfold_values(v):
     return v
 
 
-def make_dir(adir):
+def make_dir(adir, permissions=0o774):
     """
     Make a directory if it doesn't exist and set its permissions to `0777`
 
     Args:
         adir (str): Path to the directory
+        permissions (int): an octal literal describing the permissions to set for the directory
     """
     if not os.path.exists(adir):
         os.makedirs(adir)

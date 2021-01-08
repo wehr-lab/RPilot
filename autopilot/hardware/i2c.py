@@ -29,7 +29,7 @@ except ImportError:
     MLX90640_LIB = False
 
 
-@HardwareRegistry.register()
+# @HardwareRegistry.register()
 class I2C_9DOF(Hardware):
     """
     A `Sparkfun 9DOF<https://www.sparkfun.com/products/13944>`_ combined accelerometer, magnetometer, and gyroscope.
@@ -316,7 +316,7 @@ class I2C_9DOF(Hardware):
         return val
 
 
-@HardwareRegistry.register()
+# @HardwareRegistry.register()
 class MLX90640(Camera):
     """
     A MLX90640 Temperature sensor.

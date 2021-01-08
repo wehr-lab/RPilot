@@ -38,6 +38,7 @@ Warning:
 from autopilot import prefs
 from autopilot.core.networking import Net_Node
 from autopilot.core.loggers import init_logger
+from autopilot.hardware.base import Hardware
 
 # FIXME: Hardcoding names of metaclasses, should have some better system of denoting which classes can be instantiated
 # directly for setup and prefs management.
@@ -68,116 +69,116 @@ BCM_TO_BOARD = dict([reversed(i) for i in BOARD_TO_BCM.items()])
 dict: The inverse of :const:`BOARD_TO_BCM`.
 """
 
-
-class Hardware(object):
-    """
-    Generic class inherited by all hardware. Should not be instantiated
-    on its own (but it won't do anything bad so go nuts i guess).
-
-    Primarily for the purpose of defining necessary attributes.
-
-    Also defines `__del__` to call `release()` so objects are always released
-    even if not explicitly.
-
-    Attributes:
-        is_trigger (bool): Is this object a discrete event input device?
-            or, will this device be used to trigger some event? If `True`,
-            will be given a callback by :class:`.Task`, and :meth:`.assign_cb`
-            must be redefined.
-        pin (int): The BCM pin used by this device, or None if no pin is used.
-        type (str): What is this device known as in `.prefs`? Not required.
-        input (bool): Is this an input device?
-        output (bool): Is this an output device?
-    """
-    # metaclass for hardware objects
-    is_trigger = False
-    pin = None
-    type = "" # what are we known as in prefs?
-    input = False
-    output = False
-
-    def __init__(self, name=None, **kwargs):
-        if name:
-            self.name = name
-        else:
-            try:
-                self.name = self.get_name()
-            except:
-                Warning('wasnt passed name and couldnt find from prefs for object: {}'.format(self.__str__))
-                self.name = None
-
-        self.logger = init_logger(self)
-        self.listens = {}
-        self.node = None
-
-    def release(self):
-        """
-        Every hardware device needs to redefine `release()`, and must
-
-        * Safely unload any system resources used by the object, and
-        * Return the object to a neutral state - eg. LEDs turn off.
-
-        When not redefined, a warning is given.
-        """
-        Exception('The release method was not overridden by the subclass!')
-
-    def assign_cb(self, trigger_fn):
-        """
-        Every hardware device that is a :attr:`~Hardware.trigger` must redefine this
-        to accept a function (typically :meth:`.Task.handle_trigger`) that
-        is called when that trigger is activated.
-
-        When not redefined, a warning is given.
-        """
-        if self.is_trigger:
-            Exception("The assign_cb method was not overridden by the subclass!")
-
-    def get_name(self):
-        """
-        Usually Hardware is only instantiated with its pin number,
-        but we can get its name from prefs
-        """
-
-        # TODO: Unify identification of hardware types across prefs and hardware objects
-        try:
-            our_type = prefs.get('HARDWARE')[self.type]
-        except KeyError:
-            our_type = prefs.get('HARDWARE')[self.__class__.__name__]
-
-        for name, pin in our_type.items():
-            if self.pin == pin:
-                return name
-            elif isinstance(pin, dict):
-                if self.pin == pin['pin']:
-                    return name
-
-    def init_networking(self, listens=None, **kwargs):
-        """
-        Spawn a :class:`.Net_Node` to :attr:`Hardware.node` for streaming or networked command
-
-        Args:
-            listens (dict): Dictionary mapping message keys to handling methods
-            **kwargs: Passed to :class:`.Net_Node`
-
-        Returns:
-
-        """
-
-        if not listens:
-            listens = self.listens
-
-        self.node = Net_Node(
-            self.name,
-            upstream=prefs.get('NAME'),
-            port=prefs.get('MSGPORT'),
-            listens=listens,
-            instance=False,
-            **kwargs
-            #upstream_ip=prefs.get('TERMINALIP'),
-            #daemon=False
-        )
-
-
-
-    def __del__(self):
-        self.release()
+#
+# class Hardware(object):
+#     """
+#     Generic class inherited by all hardware. Should not be instantiated
+#     on its own (but it won't do anything bad so go nuts i guess).
+#
+#     Primarily for the purpose of defining necessary attributes.
+#
+#     Also defines `__del__` to call `release()` so objects are always released
+#     even if not explicitly.
+#
+#     Attributes:
+#         is_trigger (bool): Is this object a discrete event input device?
+#             or, will this device be used to trigger some event? If `True`,
+#             will be given a callback by :class:`.Task`, and :meth:`.assign_cb`
+#             must be redefined.
+#         pin (int): The BCM pin used by this device, or None if no pin is used.
+#         type (str): What is this device known as in `.prefs`? Not required.
+#         input (bool): Is this an input device?
+#         output (bool): Is this an output device?
+#     """
+#     # metaclass for hardware objects
+#     is_trigger = False
+#     pin = None
+#     type = "" # what are we known as in prefs?
+#     input = False
+#     output = False
+#
+#     def __init__(self, name=None, **kwargs):
+#         if name:
+#             self.name = name
+#         else:
+#             try:
+#                 self.name = self.get_name()
+#             except:
+#                 Warning('wasnt passed name and couldnt find from prefs for object: {}'.format(self.__str__))
+#                 self.name = None
+#
+#         self.logger = init_logger(self)
+#         self.listens = {}
+#         self.node = None
+#
+#     def release(self):
+#         """
+#         Every hardware device needs to redefine `release()`, and must
+#
+#         * Safely unload any system resources used by the object, and
+#         * Return the object to a neutral state - eg. LEDs turn off.
+#
+#         When not redefined, a warning is given.
+#         """
+#         Exception('The release method was not overridden by the subclass!')
+#
+#     def assign_cb(self, trigger_fn):
+#         """
+#         Every hardware device that is a :attr:`~Hardware.trigger` must redefine this
+#         to accept a function (typically :meth:`.Task.handle_trigger`) that
+#         is called when that trigger is activated.
+#
+#         When not redefined, a warning is given.
+#         """
+#         if self.is_trigger:
+#             Exception("The assign_cb method was not overridden by the subclass!")
+#
+#     def get_name(self):
+#         """
+#         Usually Hardware is only instantiated with its pin number,
+#         but we can get its name from prefs
+#         """
+#
+#         # TODO: Unify identification of hardware types across prefs and hardware objects
+#         try:
+#             our_type = prefs.get('HARDWARE')[self.type]
+#         except KeyError:
+#             our_type = prefs.get('HARDWARE')[self.__class__.__name__]
+#
+#         for name, pin in our_type.items():
+#             if self.pin == pin:
+#                 return name
+#             elif isinstance(pin, dict):
+#                 if self.pin == pin['pin']:
+#                     return name
+#
+#     def init_networking(self, listens=None, **kwargs):
+#         """
+#         Spawn a :class:`.Net_Node` to :attr:`Hardware.node` for streaming or networked command
+#
+#         Args:
+#             listens (dict): Dictionary mapping message keys to handling methods
+#             **kwargs: Passed to :class:`.Net_Node`
+#
+#         Returns:
+#
+#         """
+#
+#         if not listens:
+#             listens = self.listens
+#
+#         self.node = Net_Node(
+#             self.name,
+#             upstream=prefs.get('NAME'),
+#             port=prefs.get('MSGPORT'),
+#             listens=listens,
+#             instance=False,
+#             **kwargs
+#             #upstream_ip=prefs.get('TERMINALIP'),
+#             #daemon=False
+#         )
+#
+#
+#
+#     def __del__(self):
+#         self.release()

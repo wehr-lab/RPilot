@@ -9,6 +9,7 @@ returns isoformatted timestamps rather than tick numbers in callbacks. See the `
 Note:
     This module does not include hardware that uses the GPIO pins over a specific protocol like i2c
 """
+from abc import ABC
 import os
 import sys
 import threading
@@ -267,7 +268,7 @@ class GPIO(Hardware):
         self.pig.stop()
 
 
-@HardwareRegistry.register()
+# @HardwareRegistry.register()
 class Digital_Out(GPIO):
     """
     TTL/Digital logic out through a GPIO pin.
@@ -642,7 +643,7 @@ class Digital_Out(GPIO):
             super(Digital_Out, self).release()
 
 
-@HardwareRegistry.register()
+# @HardwareRegistry.register()
 class Digital_In(GPIO):
     """
     Record digital input and call one or more callbacks on logic transition.
@@ -923,7 +924,7 @@ class PWM(Digital_Out):
             pass
 
 
-@HardwareRegistry.register()
+# @HardwareRegistry.register()
 class LED_RGB(Digital_Out):
 
     output = True
@@ -1241,7 +1242,7 @@ class LED_RGB(Digital_Out):
         self.logger.warning('pull cant be set via the attribute')
 
 
-@HardwareRegistry.register()
+# @HardwareRegistry.register()
 class Solenoid(Digital_Out):
     """
     Solenoid valve for water delivery.

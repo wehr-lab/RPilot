@@ -580,7 +580,7 @@ class Camera(Hardware):
 
 
 
-@HardwareRegistry.register()
+# @HardwareRegistry.register()
 class Camera_CV(Camera):
 
     def __init__(self, camera_idx = 0, **kwargs):
@@ -786,7 +786,7 @@ class Camera_CV(Camera):
         return self._v4l_info
 
 
-@HardwareRegistry.register()
+# @HardwareRegistry.register()
 class Camera_Spinnaker(Camera):
 
     type="CAMERA_SPIN"

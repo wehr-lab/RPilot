@@ -6,8 +6,9 @@ Adapted from
 http://eli.thegreenplace.net/2012/08/07/fundamental-concepts-of-plugin-infrastructures
 https://github.com/cortex-lab/phy/blob/master/phy/utils/plugin.py
 """
-
+import pdb
 import os
+from abc import ABCMeta
 import os.path as op
 # import imp
 import importlib
@@ -62,7 +63,8 @@ class Registry(type):
         """
         Add the newly created item to the _items dictionary and register it!!
         """
-        print('init')
+        # print('init')
+        # pdb.set_trace()
 
         cls._items[name] = cls
         type.__init__(cls, name, bases, attrs)
@@ -72,7 +74,8 @@ class Registry(type):
         Called with the Sub-Registry as the cls attribute,
         create the _items dictionary if none has been created yet.
         """
-        print('new')
+        # print('new')
+        # pdb.set_trace()
 
         if cls._items is None:
             cls._items = {}
@@ -82,26 +85,28 @@ class Registry(type):
             cls.init_registry()
 
         return type.__new__(cls, name, bases, attrs)
-
-    @classmethod
-    def register(cls, **kwargs):
-        """
-        If subclassing don't work for some reason, a decorator ya can use to register
-
-        .. Examples::
-
-            @HardwareRegistry.register
-            class Some_Hardware_Object(Hardware):
-                pass
-
-        """
-        def decorator(cls_):
-            cls._items[cls_.__name__] = cls_
-            # if _fullname(cls_) not in (_fullname(_) for _ in HardwareRegistry.devices):
-            #     # print("Register hardware", _fullname(cls_))  # TODO: use logger
-            #     cls.devices.append(cls_)
-            return cls_
-        return decorator
+    #
+    # @classmethod
+    # def register(cls, **kwargs):
+    #     """
+    #     If subclassing don't work for some reason, a decorator ya can use to register
+    #
+    #     .. Examples::
+    #
+    #         @HardwareRegistry.register
+    #         class Some_Hardware_Object(Hardware):
+    #             pass
+    #
+    #     """
+    #
+    #     def decorator(cls_):
+    #         pdb.set_trace()
+    #         cls._items[cls_.__name__] = cls_
+    #         # if _fullname(cls_) not in (_fullname(_) for _ in HardwareRegistry.devices):
+    #         #     # print("Register hardware", _fullname(cls_))  # TODO: use logger
+    #         #     cls.devices.append(cls_)
+    #         return cls_
+    #     return decorator
 
     @classmethod
     def get_names(cls):
@@ -202,7 +207,20 @@ class HardwareRegistry(Registry):
         import autopilot.hardware
 
     @classmethod
-    def list_hardware
+    def list_hardware(cls):
+        hw_category = {}
+        for class_name, class_object in cls._items.items():
+            cg =  class_object.category
+            if cg == class_name or class_name == "Hardware":
+                # don't return metaclasses
+                continue
+            if cg is None:
+                cg = 'Uncategorized'
+            elif cg not in hw_category:
+                hw_category[cg] = []
+            hw_category[cg].append(class_name)
+
+        return hw_category
 
 
 def load_user_paths():
@@ -210,7 +228,7 @@ def load_user_paths():
 
     from autopilot.tasks.task import Task
 
-    path_file = Path(prefs.BASEDIR) / 'user_paths.json'
+    path_file = Path(prefs.get('BASEDIR')) / 'user_paths.json'
 
     if not path_file.exists():
 
